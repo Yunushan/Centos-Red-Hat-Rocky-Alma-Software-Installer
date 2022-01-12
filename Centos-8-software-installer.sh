@@ -25,7 +25,7 @@ options=("PHP ${opts[1]}" "Nginx ${opts[2]}" "FFMPEG ${opts[3]}" "GCC ${opts[4]}
 "Jenkins ${opts[14]}" "Docker ${opts[15]}" "Weechat 2.6 (IRC) ${opts[16]}" "Quassel (IRC) ${opts[17]}" "Neofetch ${opts[18]}" "GNU Emacs ${opts[19]}" 
 "Kubectl ${opts[20]}" "Magic Wormhole ${opts[21]}" "Neovim ${opts[22]}" "OpenJDK 8-11-17 ${opts[23]}" "DVBlast3.4 ${opts[24]}" "OpenSSL ${opts[25]}" 
 "Gimp ${opts[26]}" "Linux Kernel ${opts[27]}" "Samba ${opts[28]}" "Mysql ${opts[29]}" "MariaDB ${opts[30]}" "Nodejs & Npm ${opts[31]}" ".NET SDK ${opts[32]}"
-"Done ${opts[33]}")
+"OpenSSH Server ${opts[33]}" "Done ${opts[34]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -157,10 +157,14 @@ options=("PHP ${opts[1]}" "Nginx ${opts[2]}" "FFMPEG ${opts[3]}" "GCC ${opts[4]}
                 choice 32
                 break
                 ;;
-            "Done ${opts[33]}")
+            "OpenSSH Server ${opts[33]}")
+                choice 33
+                break
+                ;;
+            "Done ${opts[34]}")
                 break 2
                 ;;
-            *) printf '%s\n' 'Please Choose Between 1-33';;
+            *) printf '%s\n' 'Please Choose Between 1-34';;
         esac
     done
 done
@@ -194,12 +198,11 @@ printf "\n"
 
 
 #Necessary Packages
-sudo yum -y update
+#sudo yum -y update
 sudo yum -y install epel-release
 sudo yum -y install dnf-plugins-core
 sudo yum config-manager --set-enabled powertools
-sudo yum -y install lynx
-sudo yum -y install wget curl mlocate nano snapd git
+sudo yum -y install lynx wget curl mlocate nano snapd git make
 sudo systemctl enable --now snapd.socket
 sudo ln -s /var/lib/snapd/snap /snap
 sudo echo 'export PATH="$PATH:/snap/bin/"' >> /etc/profile
@@ -256,11 +259,13 @@ printf "\nPHP Installation Has Finished\n\n"
 #NGINX
 
 #OpenSSL Installation Section
-printf "\nPlease Choose Your Desired OpenSSL Version\n\n1-)OpenSSL 1.1.1k (Official Package)\n2-)OpenSSL Latest(Compile From Source)\n\nPlease Select Your OpenSSL Version:"
+printf "\nPlease Choose Your Desired OpenSSL Version\n\n1-)OpenSSL 1.1.1k (Official Package)\n2-)OpenSSL 3.0\n3-)OpenSSL Latest(Compile From Source)\n\nPlease Select Your OpenSSL Version:"
 read -r opensslversion
 if [ "$opensslversion" = "1" ];then
-    yum install openssl-devel -y
+    sudo yum -y install openssl-devel
 elif [ "$opensslversion" = "2" ];then
+    sudo yum -y install openssl3 openssl3-devel openssl3-libs
+elif [ "$opensslversion" = "3" ];then
 sudo yum install perl gcc -y
 openssl_latest=$(lynx -dump https://www.openssl.org/source/ | awk '{print $2}' | grep -iv '.asc\|sha\|fips' | grep -i .tar.gz | tail -n 1)
 wget -O /root/Downloads/openssl-latest.tar.gz "$openssl_latest"
@@ -1017,6 +1022,45 @@ elif [ "$netsdkversion" = "5" ];then
     sudo yum install dotnet-sdk-6.0 -y
 else
     echo "Out of options please choose between 1-4"  
+fi
+;;
+
+33)
+#OpenSSH Server
+printf "\nPlease Choose Your Desired OpenSSH Version \n\n1-)OpenSSH Server (Official Package)\n2-)OpenSSH Latest (Compile From Source)\n\nPlease Select Your OpenSSH Version:"
+read -r opensshversion
+if [ "$opensshversion" = "1" ];then
+    cd /root/Downloads/openssh-latest
+    make -j "$core" uninstall
+    sudo yum -y install openssh openssh-clients openssh-server 
+elif [ "$opensshversion" = "2" ];then
+    #sudo yum -y remove openssh*
+    sudo yum -y install gcc zlib zlib-devel compat-openssl10 openssl openssl-devel
+    sudo mkdir -pv /root/Downloads/openssh-latest
+    opensshlatest=$(lynx -dump https://www.openssh.com/releasenotes.html | awk '/http/{print $2}' | grep -i p1.tar.gz | head -n 1)
+    wget -O /root/Downloads/openssh-latest.tar.gz $opensshlatest
+    tar -xvf /root/Downloads/openssh-latest.tar.gz -C /root/Downloads/openssh-latest --strip-components 1
+    cd /root/Downloads/openssh-latest
+    ./configure --prefix=/usr                            \
+            --sysconfdir=/etc/ssh                    \
+            --with-md5-passwords                     \
+            --with-privsep-path=/var/lib/sshd        \
+            --with-default-path=/usr/bin             \
+            --with-superuser-path=/usr/sbin:/usr/bin \
+            --with-pid-dir=/run
+    make -j "$core" && make -j "$core" install
+    install -v -m755    contrib/ssh-copy-id /usr/bin
+    install -v -m644    contrib/ssh-copy-id.1 /usr/share/man/man1
+    install -v -m755 -d /usr/share/doc/openssh-8.8p1
+    install -v -m644    INSTALL LICENCE OVERVIEW README* /usr/share/doc/openssh-8.8p1
+    chmod 600 ~/.ssh/id_rsa
+    chmod 600 /etc/ssh/ssh_host_rsa_key
+    chmod 600 /etc/ssh/ssh_host_ecdsa_key
+    chmod 600 /etc/ssh/ssh_host_ed25519_key
+    echo "PermitRootLogin yes" >> /etc/ssh/ssh_config
+    #make install-sshd
+else
+    echo "Out of options please choose between 1-2"  
 fi
 ;;
         esac
