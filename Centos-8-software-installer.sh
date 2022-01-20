@@ -25,7 +25,9 @@ options=("PHP ${opts[1]}" "Nginx ${opts[2]}" "FFMPEG ${opts[3]}" "GCC ${opts[4]}
 "Jenkins ${opts[14]}" "Docker ${opts[15]}" "Weechat 2.6 (IRC) ${opts[16]}" "Quassel (IRC) ${opts[17]}" "Neofetch ${opts[18]}" "GNU Emacs ${opts[19]}" 
 "Kubectl ${opts[20]}" "Magic Wormhole ${opts[21]}" "Neovim ${opts[22]}" "OpenJDK 8-11-17 ${opts[23]}" "DVBlast3.4 ${opts[24]}" "OpenSSL ${opts[25]}" 
 "Gimp ${opts[26]}" "Linux Kernel ${opts[27]}" "Samba ${opts[28]}" "Mysql ${opts[29]}" "MariaDB ${opts[30]}" "Nodejs & Npm ${opts[31]}" ".NET SDK ${opts[32]}"
-"OpenSSH Server ${opts[33]}" "Done ${opts[34]}")
+"OpenSSH Server ${opts[33]}" "WineHQ ${opts[34]}" "Visual Studio Code ${opts[35]}" "Android Studio ${opts[36]}" 
+"Postman ${opts[37]}" "Beekeeper Studio ${opts[38]}" "Mysql Router ${opts[39]}" "GoCD Server-Agent ${opts[40]}" 
+"Flutter ${opts[41]}" "Ruby ${opts[42]}" "Done ${opts[43]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -161,10 +163,46 @@ options=("PHP ${opts[1]}" "Nginx ${opts[2]}" "FFMPEG ${opts[3]}" "GCC ${opts[4]}
                 choice 33
                 break
                 ;;
-            "Done ${opts[34]}")
+            "WineHQ ${opts[34]}")
+                choice 34
+                break
+                ;;
+            "Visual Studio Code ${opts[35]}")
+                choice 35
+                break
+                ;;
+            "Android Studio ${opts[36]}")
+                choice 36
+                break
+                ;;
+            "Postman ${opts[37]}")
+                choice 37
+                break
+                ;;
+            "Beekeeper Studio ${opts[38]}")
+                choice 38
+                break
+                ;;
+            "Mysql Router ${opts[39]}")
+                choice 39
+                break
+                ;;
+            "GoCD Server-Agent ${opts[40]}")
+                choice 40
+                break
+                ;;
+            "Flutter ${opts[41]}")
+                choice 41
+                break
+                ;;
+            "Ruby ${opts[42]}")
+                choice 42
+                break
+                ;;
+            "Done ${opts[43]}")
                 break 2
                 ;;
-            *) printf '%s\n' 'Please Choose Between 1-34';;
+            *) printf '%s\n' 'Please Choose Between 1-43';;
         esac
     done
 done
@@ -200,7 +238,7 @@ printf "\n"
 #Necessary Packages
 #sudo yum -y update
 sudo yum -y install epel-release
-sudo yum -y install dnf-plugins-core
+sudo yum -y install dnf-plugins-core dnf
 sudo yum config-manager --set-enabled powertools
 sudo yum -y install lynx wget curl mlocate nano snapd git make
 sudo systemctl enable --now snapd.socket
@@ -400,13 +438,18 @@ sudo yum -y install https://download1.rpmfusion.org/free/el/rpmfusion-free-relea
 printf "\nPlease Choose Your Desired VLC Version\n\n1-)VLC\n2-)VLC Core(Terminal Only)\n"
 read -r vlcversion
 if [ "$vlcversion" = "1" ];then
+    snap remove vlc
     sudo yum -y install vlc python-vlc
     sudo sed -i 's/geteuid/getppid/' /usr/bin/vlc
     printf "\nVLC Installation Has Finished\n\n"
 elif [ "$vlcversion" = "2" ];then
+    snap remove vlc
     sudo yum -y install vlc-core
     sudo sed -i 's/geteuid/getppid/' /usr/bin/vlc
     printf "\nVLC Core Installation Has Finished\n\n"
+elif [ "$vlcversion" = "3" ];then
+    sudo yum -y remove vlc vlc-core
+    snap install vlc
 fi
 ;;
 
@@ -465,7 +508,6 @@ fi
 sudo systemctl daemon-reload
 sudo systemctl enable httpd
 sudo systemctl start httpd
-sudo systemctl status httpd
 
 #sudo firewall-cmd --zone=public --permanent --add-service=http
 #sudo firewall-cmd --zone=public --permanent --add-service=https
@@ -539,7 +581,6 @@ sudo yum-config-manager \
 sudo yum install docker-ce --nobest docker-ce-cli containerd.io -y
 systemctl start docker
 systemctl enable docker
-systemctl status docker
 #printf "\nDocker Installation Has Finished\n\n"
 ;;
 
@@ -581,6 +622,10 @@ printf "\nEmacs Installation Has Finished\n\n"
 
 20)
 #Kubectl
+sudo snap remove kubectl
+printf "\nPlease Choose Your Desired kubectl Version\n\n1-)Kubectl \n2-)Kubectl (Snap)\n3-)Kubectl (Binary)\n\nPlease Select Your Kubectl Version:"
+read -r kubectlversion
+if [ "$kubectlversion" = "1" ];then
 cat <<EOF > /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
@@ -595,6 +640,19 @@ sudo systemctl start kubelet
 sudo systemctl enable kubelet
 printf "\n"
 kubectl version
+elif [ "$kubectlversion" = "2" ];then
+    sudo yum -y remove kubelet kubeadm kubectl
+    sudo snap install kubectl --classic
+elif [ "$kubectlversion" = "3" ];then
+    sudo snap remove kubectl
+    sudo yum -y remove kubelet kubeadm kubectl
+    cd /root/Downloads
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+else
+    echo "Out of options please choose between 1-3"
+    :
+fi
 printf "\nKubectl Installation Has Finished\n\n"
 ;;
 
@@ -693,12 +751,8 @@ printf "\nOpenSSL Installation Has Finished \n\n"
 
 26)
 #Gimp
-yum install epel-release -y
-yum install snapd -y
-sudo systemctl enable --now snapd.socket
-sudo ln -s /var/lib/snapd/snap /snap
-sudo echo 'export PATH="$PATH:/snap/bin/"' >> /etc/profile
-source /etc/profile
+sudo yum install epel-release -y
+sudo yum install snapd -y
 snap install gimp
 ;;
 
@@ -729,7 +783,6 @@ if [ "$sambaversion" = "1" ];then
     sudo yum samba samba-common samba-client -y
     systemctl enable smb
     systemctl start smb
-    systemctl status smb
 elif [ "$sambaversion" = "2" ];then
     sudo yum install docbook-style-xsl gcc gdb gnutls-devel gpgme-devel jansson-devel \
       keyutils-libs-devel krb5-workstation libacl-devel libaio-devel \
@@ -776,7 +829,7 @@ printf "\nLinux Kernel Installation Has Finished To Apply New Kernel Please Rebo
 
 29)
 #Mysql
-printf "\nPlease Choose Your Desired Mysql Version\n\n1-)Mysql 8.0\n2-)Mysql 5.7\n3-)Mysql 5.6\n4-)Mysql 5.5\n\nPlease Select Your Mysql Version:"
+printf "\nPlease Choose Your Desired Mysql Version\n\n1-)Mysql 8.0\n2-)Mysql 5.7\n3-)Mysql 5.6\n4-)Mysql 5.5\n6-)Mysql 8 (Latest)\n\nPlease Select Your Mysql Version:"
 read -r mysqlversion
 if [ "$mysqlversion" = "1" ];then
     sudo dnf remove @mysql -y
@@ -803,7 +856,6 @@ if [ "$mysqlversion" = "1" ];then
     sudo yum install mysql-devel mysql-server -y
     systemctl start mysqld
     systemctl enable mysqld
-    systemctl status mysqld
 elif [ "$mysqlversion" = "2" ];then
     sudo dnf remove @mysql -y
     sudo dnf module reset mysql -y && sudo dnf module disable mysql -y
@@ -880,11 +932,9 @@ gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-mysql" > /etc/yum.repos.d/mysql-commu
     ausearch -c 'mysqld_safe' --raw | audit2allow -O /root/ -M my-mysqldsafe
     semodule -X 300 -i my-mysqldsafe.pp
     sudo rm -f my-mysqldsafe.te my-mysqldsafe.pp
-
     sudo yum install mysql-community-server -y
     #systemctl start mysqld
     #systemctl enable mysqld
-    systemctl status mysqld
     printf "\nMysql 5.6 Installation Has Finished.\n\n"
 elif [ "$mysqlversion" = "4" ];then
 echo "# Enable to use MySQL 5.5
@@ -908,18 +958,28 @@ gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-mysql" > /etc/yum.repos.d/mysql-commu
         if [ "$mysql_uninstall_verify" = "Y" ] || [ "$mysql_uninstall_verify" = "y" ];then
             echo "Uninstalling mysql"
             sudo yum remove mysql-community-server mysql-devel mysql-server -y
+            sudo yum install mysql-community-server -y
         else
             :
         fi
     fi
-    sudo yum install mysql-community-server -y
-    #systemctl start mysqld
-    #systemctl enable mysqld
-    systemctl status mysqld
-    printf "\nMysql 5.5 Installation Has Finished.\n\n"
+elif [ "$mysqlversion" = "5" ];then
+    mysql_community_server=$(lynx -dump https://dev.mysql.com/downloads/file/?id=509898 | awk '/http/{print $2}' | grep -i rpm | head -n 1)
+    mysql_community_client=$(lynx -dump https://dev.mysql.com/downloads/file/?id=509895 | awk '/http/{print $2}' | grep -i rpm | head -n 1)
+    mysql_community_common=$(lynx -dump https://dev.mysql.com/downloads/file/?id=509896 | awk '/http/{print $2}' | grep -i rpm | head -n 1)
+    mysql_community_icu_data_files=$(lynx -dump https://dev.mysql.com/downloads/file/?id=509907 | awk '/http/{print $2}' | grep -i rpm | head -n 1)
+    sudo wget -O /root/Downloads/mysql-community-server-latest.rpm $mysql_community_server 
+    sudo wget -O /root/Downloads/mysql-community-client-latest.rpm $mysql_community_client 
+    sudo wget -O /root/Downloads/mysql-community-common-latest.rpm $mysql_community_common 
+    sudo wget -O /root/Downloads/mysql-community-icu-data-files-latest.rpm $mysql_community_icu_data_files
+    sudo rpm -Uvh mysql-community*
+    systemctl start mysqld
+    systemctl enable mysqld
+    printf "\nMysql 8 (Latest) Installation Has Finished.\n\n"
 else
     echo "Out of options please choose between 1-4"
 fi
+
 ;;
 30)
 #MariaDB
@@ -1036,31 +1096,174 @@ if [ "$opensshversion" = "1" ];then
 elif [ "$opensshversion" = "2" ];then
     #sudo yum -y remove openssh*
     sudo yum -y install gcc zlib zlib-devel compat-openssl10 openssl openssl-devel
+    sudo dnf group install -y 'Development Tools'
+    sudo dnf install -y zlib-devel openssl-devel pam-devel libselinux-devel
+    sudo yum -y install audit-libs-devel autoconf automake gcc libX11-devel libselinux-devel make ncurses-devel openssl-devel p11-kit-devel perl-generators systemd-devel xauth pam-devel rpm-build zlib-devel
+    sudo mkdir /var/lib/sshd
+    sudo chmod -R 700 /var/lib/sshd/
+    sudo chown -R root:sys /var/lib/sshd/
+    sudo useradd -r -U -d /var/lib/sshd/ -c "sshd privsep" -s /bin/false sshd
     sudo mkdir -pv /root/Downloads/openssh-latest
     opensshlatest=$(lynx -dump https://www.openssh.com/releasenotes.html | awk '/http/{print $2}' | grep -i p1.tar.gz | head -n 1)
     wget -O /root/Downloads/openssh-latest.tar.gz $opensshlatest
     tar -xvf /root/Downloads/openssh-latest.tar.gz -C /root/Downloads/openssh-latest --strip-components 1
     cd /root/Downloads/openssh-latest
-    ./configure --prefix=/usr                            \
-            --sysconfdir=/etc/ssh                    \
-            --with-md5-passwords                     \
-            --with-privsep-path=/var/lib/sshd        \
-            --with-default-path=/usr/bin             \
-            --with-superuser-path=/usr/sbin:/usr/bin \
-            --with-pid-dir=/run
+    ./configure --with-md5-passwords --with-pam --with-selinux --with-privsep-path=/var/lib/sshd/ --sysconfdir=/etc/ssh
     make -j "$core" && make -j "$core" install
-    install -v -m755    contrib/ssh-copy-id /usr/bin
-    install -v -m644    contrib/ssh-copy-id.1 /usr/share/man/man1
-    install -v -m755 -d /usr/share/doc/openssh-8.8p1
-    install -v -m644    INSTALL LICENCE OVERVIEW README* /usr/share/doc/openssh-8.8p1
-    chmod 600 ~/.ssh/id_rsa
-    chmod 600 /etc/ssh/ssh_host_rsa_key
-    chmod 600 /etc/ssh/ssh_host_ecdsa_key
-    chmod 600 /etc/ssh/ssh_host_ed25519_key
-    echo "PermitRootLogin yes" >> /etc/ssh/ssh_config
-    #make install-sshd
+    systemctl restart sshd
 else
     echo "Out of options please choose between 1-2"  
+fi
+;;
+
+34)
+#WineHQ From Source Code
+sudo mkdir -pv /root/Downloads/winelatest
+sudo dnf groupinstall 'Development Tools' -y
+sudo dnf -y install epel-release
+sudo dnf config-manager --set-enabled PowerTools
+sudo yum -y install libxslt-devel libpng-devel libX11-devel zlib-devel \
+libtiff-devel freetype-devel libxcb-devel  libxml2-devel libgcrypt-devel \
+dbus-devel libjpeg-turbo-devel  fontconfig-devel gnutls-devel gstreamer1-devel \
+libXcursor-devel libXi-devel libXrandr-devel libXfixes-devel libXinerama-devel \
+libXcomposite-devel mesa-libOSMesa-devel libpcap-devel libusb-devel libv4l-devel \
+libgphoto2-devel gstreamer1-devel libgudev SDL2-devel gsm-devel libvkd3d-devel libudev-devel
+winelatest=$(lynx -dump https://dl.winehq.org/wine/source/ | awk '/http/{print $2}' | grep -iv README | grep wine/source | tail -n 1)
+winelatest=$(lynx -dump  "$winelatest" | awk '/http/{print $2}' | grep -i tar.xz | grep -iv sign | tail -n 1)
+wget -O /root/Downloads/winelatest.tar.xz "$winelatest"
+tar xvf /root/Downloads/winelatest.tar.xz -C /root/Downloads/winelatest --strip-components 1
+cd /root/Downloads/winelatest/
+./configure --enable-win64
+make -j "$core" && make -j "$core" install
+;;
+
+35)
+#Visual Studio Code
+printf "\nPlease Choose Your Desired Visual Studio Code Version \n\n1-)Visual Studio Code(From Package Manager)\n2-)Visual Studio Code (Via Snap)\n\nPlease Select Your Visual Studio Code Version:"
+read -r visual_studio_code_version
+if [ "$visual_studio_code_version" = "1" ];then
+    sudo snap remove code
+    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+    sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
+    sudo yum check-update
+    sudo yum -y install code
+elif [ "$visual_studio_code_version" = "2" ];then
+    sudo yum -y remove code
+    sudo snap install code --classic
+else
+    echo "Out of options please choose between 1-2"
+fi
+;;
+
+36)
+#Android Studio
+printf "\nPlease Choose Your Desired Android Studio Version \n\n1-)Android Studio (From .tar.gz file)\n2-)Android Studio (Via Snap)\n\nPlease Select Your Android Studio Version:"
+read -r android_studio_version
+if [ "$android_studio_version" = "1" ];then
+    sudo mkdir -pv /root/Downloads/android-studio
+    sudo yum -y install java-1.8.0-openjdk java-1.8.0-openjdk-devel
+    sudo snap remove android-studio
+    android_studio_latest=$(lynx -dump https://developer.android.com/studio | awk '/http/{print $2}' | grep -i .tar.gz | head -n 1)
+    wget -O /root/Downloads/android_studio_latest.tar.gz "$android_studio_latest"
+    tar xvf /root/Downloads/android_studio_latest.tar.gz -C /root/Downloads/android-studio --strip-components 1
+    cd /root/Downloads/android-studio/
+    ln -s /root/Downloads/android-studio/bin/studio.sh /usr/local/bin/android-studio
+elif [ "$android_studio_version" = "2" ];then
+    sudo yum -y install java-1.8.0-openjdk java-1.8.0-openjdk-devel
+    sudo snap install android-studio --classic
+else
+    echo "Out of options please choose between 1-2"
+fi
+;;
+
+37)
+#Postman
+printf "\nPlease Choose Your Desired Postman Version \n\n1-)Postman (Snap)\n2-)Postman (From .tar.gz File)\n\nPlease Select Your Postman Version:"
+read -r postman_version
+if [ "$postman_version" = "1" ];then
+    sudo snap install postman
+elif [ "$postman_version" = "2" ];then
+    sudo mkdir -pv /root/Downloads/postman-latest
+    wget -O /root/Downloads/postman-latest.tar.gz https://dl.pstmn.io/download/latest/linux64
+    tar xvf /root/Downloads/postman-latest.tar.gz -C /root/Downloads/postman-latest --strip-components 1
+    sudo ln -s /root/Downloads/Postman /usr/local/bin/postman
+else
+    echo "Out of options please choose between 1-2"
+fi
+;;
+
+38)
+#Beekeeper Studio
+sudo snap install beekeeper-studio
+;;
+
+39)
+#Mysql Router
+mysql_community=$(lynx -dump https://dev.mysql.com/downloads/file/?id=508944 | awk '/http/{print $2}' | grep -i .rpm | head -n 1)
+sudo wget -O /root/Downloads/mysql80-community-release.rpm $mysql_community
+sudo rpm -Uvh mysql80-community-release.rpm
+sudo yum -y install mysql-router
+;;
+
+40)
+#GoCD
+printf "\nPlease Choose Your GoCD Version \n\n1-)GoCD Server\n2-)GoCD Server (Docker)\n3-)GoCD Agent\n4-)GoCD Agent (Docker)\n\nPlease Select Your GoCD Version:"
+read -r gocd_version
+if [ "$gocd_version" = "1" ];then
+    sudo yum -y install java-1.8.0-openjdk-devel
+    java -version
+    sudo curl https://download.gocd.org/gocd.repo -o /etc/yum.repos.d/gocd.repo
+    sudo yum install -y go-server
+    sudo systemctl start go-server
+    sudo systemctl enable go-server
+    sudo mkdir -pv /opt/artifacts
+    sudo chown -R go:go /opt/artifacts
+elif [ "$gocd_version" = "2" ];then
+    sudo yum install -y yum-utils procps
+    sudo yum install -y https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm
+    sudo yum-config-manager \
+        --add-repo \
+        https://download.docker.com/linux/centos/docker-ce.repo
+    sudo yum install docker-ce --nobest docker-ce-cli containerd.io -y
+    systemctl start docker
+    systemctl enable docker
+    docker pull gocd/gocd-server
+    docker run -d -p8153:8153 gocd/gocd-server:v21.4.0
+elif [ "$gocd_version" = "3" ];then
+    sudo curl https://download.gocd.org/gocd.repo -o /etc/yum.repos.d/gocd.repo
+    sudo yum install -y go-agent
+elif [ "$gocd_version" = "4" ];then
+    sudo yum install -y yum-utils procps
+    sudo yum install -y https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm
+    sudo yum-config-manager \
+        --add-repo \
+        https://download.docker.com/linux/centos/docker-ce.repo
+    sudo yum install docker-ce --nobest docker-ce-cli containerd.io -y
+    systemctl start docker
+    systemctl enable docker
+    docker pull gocd/gocd-agent-centos-7
+else
+    echo "Out of options please choose between 1-4"
+fi
+;;
+
+41)
+#Flutter
+sudo snap install flutter --classic
+;;
+
+42)
+#Ruby
+printf "\nPlease Choose Your Ruby Version \n\n1-)Ruby (From Official Package)\n2-)Ruby (Snap)\n\nPlease Select Your Ruby Version:"
+read -r ruby_version
+if [ "$ruby_version" = "1" ];then
+    sudo yum -y install ruby
+    ruby --version
+elif [ "$ruby_version" = "2" ];then
+    sudo yum -y remove ruby
+    sudo snap install ruby --classic
+else
+    echo "Out of options please choose between 1-4"
 fi
 ;;
         esac
