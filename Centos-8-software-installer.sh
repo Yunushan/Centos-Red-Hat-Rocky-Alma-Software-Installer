@@ -27,7 +27,8 @@ options=("PHP ${opts[1]}" "Nginx ${opts[2]}" "FFMPEG ${opts[3]}" "GCC ${opts[4]}
 "Gimp ${opts[26]}" "Linux Kernel ${opts[27]}" "Samba ${opts[28]}" "Mysql ${opts[29]}" "MariaDB ${opts[30]}" "Nodejs & Npm ${opts[31]}" ".NET SDK ${opts[32]}"
 "OpenSSH Server ${opts[33]}" "WineHQ ${opts[34]}" "Visual Studio Code ${opts[35]}" "Android Studio ${opts[36]}" 
 "Postman ${opts[37]}" "Beekeeper Studio ${opts[38]}" "Mysql Router ${opts[39]}" "GoCD Server-Agent ${opts[40]}" 
-"Flutter ${opts[41]}" "Ruby ${opts[42]}" "Done ${opts[43]}")
+"Flutter ${opts[41]}" "Ruby ${opts[42]}" "Zabbix Server ${opts[43]}" "UrBackup Server ${opts[44]}" "PostgreSQL ${opts[45]}"
+"Tinc ${opts[46]}" "Done ${opts[47]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -199,10 +200,22 @@ options=("PHP ${opts[1]}" "Nginx ${opts[2]}" "FFMPEG ${opts[3]}" "GCC ${opts[4]}
                 choice 42
                 break
                 ;;
-            "Done ${opts[43]}")
+            "Zabbix Server ${opts[43]}")
+                choice 43
+                break
+                ;;
+            "UrBackup Server ${opts[44]}")
+                choice 44
+                break
+                ;;
+            "PostgreSQL ${opts[45]}")
+                choice 45
+                break
+                ;;
+            "Done ${opts[46]}")
                 break 2
                 ;;
-            *) printf '%s\n' 'Please Choose Between 1-43';;
+            *) printf '%s\n' 'Please Choose Between 1-46';;
         esac
     done
 done
@@ -1262,6 +1275,251 @@ if [ "$ruby_version" = "1" ];then
 elif [ "$ruby_version" = "2" ];then
     sudo yum -y remove ruby
     sudo snap install ruby --classic
+else
+    echo "Out of options please choose between 1-4"
+fi
+;;
+
+43)
+#Zabbix Server
+printf "\nPlease Choose Your Desired Zabbix Option\n\n1-)Zabbix Server 4.0 LTS (Mysql & Apache)\n\
+2-)Zabbix Server 4.0 LTS (PostgreSQL & Apache)\n3-)Zabbix Server 5.0 LTS (Mysql & Apache)\n\
+4-)Zabbix Server 5.0 LTS (Mysql & NGINX)\n5-)Zabbix Server 5.0 LTS (PostgreSQL & Apache)\n\
+6-)Zabbix Server 5.0 LTS (PostgreSQL & NGINX)\n\nPlease Select Your Zabbix Option:"
+read -r zabbix_option
+if [ "$zabbix_option" = "1" ];then
+    printf "Please Enter Desired Mysql Password:"
+    read -r mysqlpassword
+    sudo rpm -Uvh https://repo.zabbix.com/zabbix/4.0/rhel/8/x86_64/zabbix-release-4.0-2.el8.noarch.rpm
+    sudo yum clean all
+    sudo yum -y install zabbix-server-mysql zabbix-web-mysql zabbix-agent mysql mysql-devel mysql-server httpd httpd-devel
+    sudo systemctl start mysqld
+    sudo systemctl enable mysqld
+    sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '$mysqlpassword';"
+    sudo systemctl restart mysqld.service
+    sudo mysql -uroot -p$mysqlpassword -e "create database zabbix character set utf8 collate utf8_bin;"
+    sudo mysql -uroot -p$mysqlpassword -e "create user zabbix@localhost identified by '$mysqlpassword';"
+    sudo mysql -uroot -p$mysqlpassword -e "grant all privileges on zabbix.* to zabbix@localhost;"
+    zcat /usr/share/doc/zabbix-server-mysql*/create.sql.gz | mysql -uzabbix -p$mysqlpassword zabbix
+    sed -i "s/# DBPassword=/DBPassword=$mysqlpassword/g" /etc/zabbix/zabbix_server.conf
+    echo "php_value[date.timezone] = UTC" >> /etc/php-fpm.d/zabbix.conf
+    sudo systemctl restart zabbix-server zabbix-agent httpd
+    sudo systemctl enable zabbix-server zabbix-agent httpd
+elif [ "$zabbix_option" = "2" ];then
+    printf "Please Enter Desired PostgreSQL Password:"
+    read -r PGPASSWORD
+    sudo rpm -Uvh https://repo.zabbix.com/zabbix/4.0/rhel/8/x86_64/zabbix-release-4.0-2.el8.noarch.rpm
+    dnf clean all
+    sudo yum -y install postgresql postgresql-server postgresql-contrib
+    sudo dnf -y install zabbix-server-pgsql zabbix-web-pgsql zabbix-agent httpd httpd-devel
+    sudo postgresql-setup --initdb
+    sudo systemctl start postgresql
+    sudo systemctl enable postgresql
+    echo "Please Enter Your Zabbix User Password"
+    sudo -u postgres createuser --pwprompt zabbix
+    sudo -u postgres createdb -O zabbix zabbix
+    zcat /usr/share/doc/zabbix-server-pgsql*/create.sql.gz | sudo -u zabbix psql zabbix
+    sed -i "s/DBPassword=/DBPassword=$PGPASSWORD/g" /etc/zabbix/zabbix_server.conf
+    echo "php_value[date.timezone] = UTC" >> /etc/php-fpm.d/zabbix.conf
+    systemctl restart zabbix-server zabbix-agent httpd php-fpm
+    systemctl enable zabbix-server zabbix-agent httpd php-fpm
+elif [ "$zabbix_option" = "3" ];then
+    printf "Please Enter Desired Mysql Password:"
+    read -r mysqlpassword
+    sudo rpm -Uvh https://repo.zabbix.com/zabbix/5.0/rhel/8/x86_64/zabbix-release-5.0-1.el8.noarch.rpm
+    dnf clean all
+    sudo dnf install -y zabbix-server-mysql zabbix-web-mysql zabbix-agent zabbix-apache-conf mysql mysql-devel mysql-server httpd httpd-devel
+    sudo systemctl start mysqld
+    sudo systemctl enable mysqld
+    sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '$mysqlpassword';"
+    sudo systemctl restart mysqld.service
+    sudo mysql -uroot -p$mysqlpassword -e "create database zabbix character set utf8 collate utf8_bin;"
+    sudo mysql -uroot -p$mysqlpassword -e "create user zabbix@localhost identified by '$mysqlpassword';"
+    sudo mysql -uroot -p$mysqlpassword -e "grant all privileges on zabbix.* to zabbix@localhost;"
+    zcat /usr/share/doc/zabbix-server-mysql*/create.sql.gz | mysql -uzabbix -p$mysqlpassword zabbix
+    sed -i "s/# DBPassword=/DBPassword=$mysqlpassword/g" /etc/zabbix/zabbix_server.conf
+    echo "php_value[date.timezone] = UTC" >> /etc/php-fpm.d/zabbix.conf
+    sudo systemctl restart zabbix-server zabbix-agent httpd
+    sudo systemctl enable zabbix-server zabbix-agent httpd
+elif [ "$zabbix_option" = "4" ];then
+    printf "Please Enter Desired Mysql Password:"
+    read -r mysqlpassword
+    sudo rpm -Uvh https://repo.zabbix.com/zabbix/5.0/rhel/8/x86_64/zabbix-release-5.0-1.el8.noarch.rpm
+    dnf clean all
+    sudo dnf install -y zabbix-server-mysql zabbix-web-mysql zabbix-nginx-conf zabbix-sql-scripts zabbix-agent mysql mysql-devel mysql-server
+    sudo systemctl start mysqld
+    sudo systemctl enable mysqld
+    sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '$mysqlpassword';"
+    sudo systemctl restart mysqld.service
+    sudo mysql -uroot -p$mysqlpassword -e "create database zabbix character set utf8 collate utf8_bin;"
+    sudo mysql -uroot -p$mysqlpassword -e "create user zabbix@localhost identified by '$mysqlpassword';"
+    sudo mysql -uroot -p$mysqlpassword -e "grant all privileges on zabbix.* to zabbix@localhost;"
+    zcat /usr/share/doc/zabbix-server-mysql*/create.sql.gz | mysql -uzabbix -p$mysqlpassword zabbix
+    sed -i "s/# DBPassword=/DBPassword=$mysqlpassword/g" /etc/zabbix/zabbix_server.conf
+    echo "php_value[date.timezone] = UTC" >> /etc/php-fpm.d/zabbix.conf
+    sudo systemctl restart zabbix-server zabbix-agent httpd
+    sudo systemctl enable zabbix-server zabbix-agent httpd
+elif [ "$zabbix_option" = "5" ];then
+    printf "Please Enter Desired PostgreSQL Password:"
+    read -r PGPASSWORD
+    sudo rpm -Uvh https://repo.zabbix.com/zabbix/5.0/rhel/8/x86_64/zabbix-release-5.0-1.el8.noarch.rpm
+    dnf clean all
+    sudo yum -y install postgresql postgresql-server postgresql-contrib
+    sudo dnf -y install zabbix-server-pgsql zabbix-web-pgsql zabbix-agent httpd httpd-devel
+    sudo postgresql-setup --initdb
+    sudo systemctl start postgresql
+    sudo systemctl enable postgresql
+    echo "Please Enter Your Zabbix User Password"
+    sudo -u postgres createuser --pwprompt zabbix
+    sudo -u postgres createdb -O zabbix zabbix
+    zcat /usr/share/doc/zabbix-server-pgsql*/create.sql.gz | sudo -u zabbix psql zabbix
+    sed -i "s/DBPassword=/DBPassword=$PGPASSWORD/g" /etc/zabbix/zabbix_server.conf
+    echo "php_value[date.timezone] = UTC" >> /etc/php-fpm.d/zabbix.conf
+    systemctl restart zabbix-server zabbix-agent httpd php-fpm
+    systemctl enable zabbix-server zabbix-agent httpd php-fpm
+elif [ "$zabbix_option" = "6" ];then
+    printf "Please Enter Desired PostgreSQL Password:"
+    read -r PGPASSWORD
+    sudo rpm -Uvh https://repo.zabbix.com/zabbix/5.0/rhel/8/x86_64/zabbix-release-5.0-1.el8.noarch.rpm
+    dnf clean all
+    sudo yum -y install postgresql postgresql-server postgresql-contrib
+    sudo dnf install -y zabbix-server-mysql zabbix-web-mysql zabbix-nginx-conf zabbix-sql-scripts zabbix-agent mysql mysql-devel mysql-server
+    sudo postgresql-setup --initdb
+    sudo systemctl start postgresql
+    sudo systemctl enable postgresql
+    echo "Please Enter Your Zabbix User Password"
+    sudo -u postgres createuser --pwprompt zabbix
+    sudo -u postgres createdb -O zabbix zabbix
+    zcat /usr/share/doc/zabbix-server-pgsql*/create.sql.gz | sudo -u zabbix psql zabbix
+    sed -i "s/DBPassword=/DBPassword=$PGPASSWORD/g" /etc/zabbix/zabbix_server.conf
+    echo "php_value[date.timezone] = UTC" >> /etc/php-fpm.d/zabbix.conf
+    systemctl restart zabbix-server zabbix-agent httpd php-fpm
+    systemctl enable zabbix-server zabbix-agent httpd php-fpm
+else
+    echo "Out of options please choose between 1-6"
+fi
+;;
+
+44)
+#UrBackup Server
+printf "\nPlease Choose Your UrBackup Version \n\n1-)UrBackup Server (Official Package)\n2-)UrBackup Server (Docker)\n3-)UrBackup Server Latest (Compile From Source)\n\nPlease Select Your UrBackup Version:"
+read -r urbackup_version
+if [ "$urbackup_version" = "1" ];then
+    cd /etc/yum.repos.d/
+    wget https://download.opensuse.org/repositories/home:uroni/CentOS_8/home:uroni.repo
+    sudo yum -y install urbackup-server
+elif [ "$urbackup_version" = "2" ];then
+    sudo yum install -y yum-utils
+    sudo yum install -y https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm
+    sudo yum-config-manager \
+        --add-repo \
+        https://download.docker.com/linux/centos/docker-ce.repo
+    sudo yum install docker-ce --nobest docker-ce-cli containerd.io -y
+    systemctl start docker
+    systemctl enable docker
+    docker run -d --name urbackup-server-1 -v /media/backups:/backups -v /media/database:/var/urbackup -p 55413-55415:55413-55415 -p 35623:35623/udp uroni/urbackup-server
+elif [ "$urbackup_version" = "3" ];then
+    sudo yum -y install gcc gcc-c++ zlib zlib-devel libcurl libcurl-devel openssl-devel cryptopp-devel
+    urbackup_latest=$(lynx -dump https://hndl.urbackup.org/Server/ | awk '/http/{print $2}' | grep -iv 'dev\|latest\|RC\|beta' | tail -n 1)
+    urbackup_latest=$(lynx -dump "$urbackup_latest" | awk '/http/{print $2}' | grep -i tar.gz | head -n 1)
+    sudo mkdir -pv /root/Downloads/urbackup-server-latest
+    wget -O /root/Downloads/urbackup-server-latest.tar.gz "$urbackup_latest"
+    tar -xvf /root/Downloads/urbackup-server-latest.tar.gz -C /root/Downloads/urbackup-server-latest --strip-components 1
+    cd /root/Downloads/urbackup-server-latest
+    ./configure
+    make -j "$core" && make -j "$core" install
+    cp urbackup-server.service /etc/systemd/system/
+    systemctl enable urbackup-server.service
+    cp defaults_server /etc/default/urbackupsrv
+    cp logrotate_urbackupsrv /etc/logrotate.d/urbackupsrv
+    systemctl start urbackup-server
+else
+    echo "Out of options please choose between 1-3"
+fi
+;;
+
+45)
+#PostgreSQL
+printf "\nPlease Choose Your Desired PostgreSQL Version\n\n1-)PostgreSQL 9.6\n2-)PostgreSQL 10\n3-)PostgreSQL 11\n4-)PostgreSQL 12\n5-)PostgreSQL 13\n6-)PostgreSQL 14\n\nPlease Select Your PostgreSQL Version:"
+read -r postgresql_version
+sudo dnf -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+sudo dnf -y module disable postgresql
+sudo dnf clean all
+if [ "$postgresql_version" = "1" ];then
+    sudo dnf -y install postgresql96-server postgresql96
+    sudo /usr/pgsql-96/bin/postgresql-96-setup initdb
+    sudo systemctl enable postgresql-96
+    sudo systemctl start postgresql-96
+elif [ "$postgresql_version" = "2" ];then
+    sudo dnf -y install postgresql10-server postgresql10
+    sudo /usr/pgsql-10/bin/postgresql-10-setup initdb
+    sudo systemctl enable postgresql-10
+    sudo systemctl start postgresql-10
+elif [ "$postgresql_version" = "3" ];then
+    sudo dnf -y install postgresql11-server postgresql11
+    sudo /usr/pgsql-11/bin/postgresql-11-setup initdb
+    sudo systemctl enable postgresql-11
+    sudo systemctl start postgresql-11
+elif [ "$postgresql_version" = "4" ];then
+    sudo dnf -y install postgresql12-server postgresql12
+    sudo /usr/pgsql-12/bin/postgresql-12-setup initdb
+    sudo systemctl enable postgresql-12
+    sudo systemctl start postgresql-12
+elif [ "$postgresql_version" = "5" ];then
+    sudo dnf -y install postgresql13-server postgresql13
+    sudo /usr/pgsql-13/bin/postgresql-13-setup initdb
+    sudo systemctl enable postgresql-13
+    sudo systemctl start postgresql-13
+elif [ "$postgresql_version" = "6" ];then
+    sudo dnf -y install postgresql14-server postgresql14
+    sudo /usr/pgsql-14/bin/postgresql-14-setup initdb
+    sudo systemctl enable postgresql-14
+    sudo systemctl start postgresql-14
+else
+    echo "Out of options please choose between 1-6"
+fi
+;;
+
+46)
+#Tinc
+printf "\nPlease Choose Your Desired Tinc Version\n\n1-)Tinc (From Official Repository)\n2-)Tinc Latest Stable(Compile From Source)\n3-)Tinc Latest Pre-Release 1.1(Compile From Source)\n\nPlease Select Your Tinc:"
+read -r tincversion
+if [ "$tincversion" = "1" ];then
+    cd /root/Downloads/tinc-latest && make -j "$core" uninstall
+    cd /root/Downloads/tinc-latest-pre && make -j "$core" uninstall
+    sudo yum -y remove tinc
+    sudo yum -y install tinc
+elif [ "$tincversion" = "2" ];then
+    cd /root/Downloads/tinc-latest && make -j "$core" uninstall
+    cd /root/Downloads/tinc-latest-pre && make -j "$core" uninstall
+    sudo yum -y remove tinc
+    sudo yum -y install zlib zlib-devel lzo lzo-devel openssl openssl-devel
+    tinclatest=$(lynx -dump https://www.tinc-vpn.org/download/ | awk '/http/{print $2}' | grep -iv '.sig\|pre' | grep -i .tar.gz | head -n 1)
+    wget -O /root/Downloads/tinc-latest.tar.gz "$tinclatest"
+    sudo mkdir -pv /root/Downloads/tinc-latest
+    tar -xvf /root/Downloads/tinc-latest.tar.gz -C /root/Downloads/tinc-latest --strip-components 1
+    cd /root/Downloads/tinc-latest
+    ./configure
+    make -j "$core" && make -j "$core" install
+    tincd --version
+elif [ "$tincversion" = "3" ];then
+    cd /root/Downloads/tinc-latest && make -j "$core" uninstall
+    cd /root/Downloads/tinc-latest-pre && make -j "$core" uninstall
+    sudo yum -y remove tinc
+    tinclatestpre=$(lynx -dump https://www.tinc-vpn.org/download/ | awk '/http/{print $2}' | grep -i 'pre' | grep -i .tar.gz | grep -iv .sig | head -n 1)
+    wget -O /root/Downloads/tinc-latest-pre.tar.gz "$tinclatestpre"
+    sudo mkdir -pv /root/Downloads/tinc-latest-pre
+    tar -xvf /root/Downloads/tinc-latest-pre.tar.gz -C /root/Downloads/tinc-latest-pre --strip-components 1
+    cd /root/Downloads/tinc-latest-pre
+    ./configure
+    make -j "$core" && make -j "$core" install
+    tincd --version
+elif [ "$tincversion" = "4" ];then
+    cd /root/Downloads/tinc-latest && make -j "$core" uninstall
+    cd /root/Downloads/tinc-latest-pre && make -j "$core" uninstall
+    sudo yum -y remove tinc
+    sudo snap install tinc-vpn
+    tinc-vpn.tincd --version
 else
     echo "Out of options please choose between 1-4"
 fi
