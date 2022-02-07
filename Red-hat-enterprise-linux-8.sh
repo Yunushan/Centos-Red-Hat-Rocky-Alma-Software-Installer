@@ -26,7 +26,7 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
 "Ruby ${opts[20]}" "Flutter ${opts[21]}" "Zabbix Server ${opts[22]}" "UrBackup Server ${opts[23]}" 
 "MariaDB ${opts[24]}" "PostgreSQL ${opts[25]}" "Postman ${opts[26]}" "Docker ${opts[27]}" 
 "Jenkins ${opts[28]}" "Nodejs & Npm ${opts[29]}" "Tinc ${opts[30]}" "Irssi ${opts[31]}" "OpenNebula ${opts[32]}" 
-"Done ${opts[33]}")
+"Links ${opts[33]}" "MongoDB ${opts[34]}" "Ansible ${opts[35]}" "ClamAV ${opts[36]}" "Done ${opts[37]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -158,10 +158,26 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
                 choice 32
                 break
                 ;;
-            "Done ${opts[33]}")
+            "Links ${opts[33]}")
+                choice 33
+                break
+                ;;
+            "MongoDB ${opts[34]}")
+                choice 34
+                break
+                ;;
+            "Ansible ${opts[35]}")
+                choice 35
+                break
+                ;;
+            "ClamAV ${opts[36]}")
+                choice 36
+                break
+                ;;
+            "Done ${opts[37]}")
                 break 2
                 ;;
-            *) printf '%s\n' 'Please Choose Between 1-33';;
+            *) printf '%s\n' 'Please Choose Between 1-37';;
         esac
     done
 done
@@ -195,13 +211,13 @@ printf "\n"
 
 #Necessary Packages
 #sudo dnf -vy update
-subscription-manager repos --enable codeready-builder-for-rhel-8-"$(arch)"-rpms
+sudo subscription-manager repos --enable codeready-builder-for-rhel-8-"$(arch)"-rpms
 sudo dnf -vy install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 sudo dnf -vy install yum-utils dnf-utils
 sudo dnf -vy install --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm \
 https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm
 sudo dnf -vy install wget curl mlocate nano lynx net-tools git iftop htop snapd bash-completion make cmake \
-bind-utils iotop powertop atop bzip2 bzip2-devel bzip2-libs
+bind-utils iotop powertop atop bzip2 bzip2-devel bzip2-libs redhat-lsb-core
 sudo systemctl enable --now snapd.socket
 sudo ln -s /var/lib/snapd/snap /snap
 export PATH=$PATH:/snap/bin
@@ -344,6 +360,7 @@ if [ "$ffmpeg_version" = "2" ];then
     snap remove ffmpeg
     sudo dnf -vy install ffmpeg ffmpeg-devel ffmpeg-libs
 elif [ "$ffmpeg_version" = "2" ];then
+    sudo dnf -vy install gcc
     sudo snap remove ffmpeg
     sudo dnf -vy remove ffmpeg ffmpeg-devel ffmpeg-libs
     sudo mkdir -pv /root/Downloads/ffmpeglatest
@@ -367,7 +384,7 @@ fi
 6)
 #Apache2
 printf "\nPlease Choose Your Desired Apache Version\n\n1-)Apache 2(From Official Package)\n\
-2-)Apache Latest(Compile From Source)\n\nPlease Select Your Apache Version:"
+2-)Apache Latest(Compile From Source)\n3-) Apache Latest (From .rpm file)\n\nPlease Select Your Apache Version:"
 read -r apacheversion
 if [ "$apacheversion" = "1" ];then
     sudo install apache2 -y
@@ -394,7 +411,12 @@ elif [ "$apacheversion" = "2" ];then
     cp -rf /root/Downloads/apr-util-1.6.1/* /root/Downloads/httpd-latest/srclib/apr-util
 
     cd /root/Downloads/httpd-latest
-    ./configure --enable-ssl --enable-so --with-mpm=event --with-included-apr --prefix=/usr/local/apache
+    ./configure --enable-ssl \
+                --enable-so \
+                --with-mpm=event \
+                --with-included-apr \
+                --enable-mods-shared=all \
+                --prefix=/usr/local/apache
     make -j "$core" && make -j "$core" install
 
 echo "[Unit]
@@ -412,19 +434,27 @@ PrivateTmp=true
 WantedBy=multi-user.target" > /etc/systemd/system/httpd.service
 
 echo "pathmunge /usr/local/apache/bin" > /etc/profile.d/httpd.sh
+ln -s /usr/local/apache/bin/httpd /usr/sbin/httpd
+systemctl enable httpd
+systemctl start httpd
 
 elif [ "$apacheversion" = "3" ];then
-    sudo dnf -vy remove apache2
+    sudo dnf -vy remove httpd
     sudo mkdir -pv /root/Downloads/httpd
     wget -O /root/Downloads/httpd/httpd-2.4.52.tar.bz2 https://dlcdn.apache.org//httpd/httpd-2.4.52.tar.bz2
     sudo dnf -vy install autoconf libuuid-devel lua-devel \
     libxml2-devel python2 python39 python39-devel doxygen apr apr-util apr-util-devel \
-    perl make cmake gcc
+    perl make cmake gcc rpm-build pcre-devel
+    cd /root/Downloads/httpd
     rpmbuild -tb httpd-2.4.52.tar.bz2
     sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-2.4.52-1.x86_64.rpm
     sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/mod_ssl-2.4.52-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-devel-2.4.52-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-tools-2.4.52-1.x86_64.rpm
+    systemctl enable httpd
+    systemctl start httpd
 else
-    echo "Out of options please choose between 1-2"
+    echo "Out of options please choose between 1-3"
 fi
 
 
@@ -679,9 +709,6 @@ elif [ "$opensshversion" = "2" ];then
                 --with-pam \
                 --with-selinux \
                 --with-privsep-path=/opt/lib/sshd/ \
-                --with-openssl-includes=/usr/include \
-                --with-openssl-libraries=/usr/lib \
-                --without-openssl-header-check  \
                 --sysconfdir=/opt/ssh
     make -j "$core" && make -j "$core" install
     systemctl restart sshd
@@ -1702,6 +1729,134 @@ sudo firewall-cmd --reload
 sudo systemctl start opennebula opennebula-sunstone
 sudo systemctl enable opennebula opennebula-sunstone
 #sudo su - oneadmin -c "oneuser show"
+;;
+
+33)
+#Links (Text based web browser)
+sudo dnf -vy install libpng libpng-devel libtiff libtiff-devel gpm gpm-devel tar gzip bzip2 zlib zlib-devel gcc make
+printf "\nPlease Choose Your Desired Links Version\n\n1-)Links (Snap) \n\
+2-)Links (Compile From Source)\n\nPlease Select Your Links Version:"
+read -r links_version
+if [ "$links_version" = "1" ];then
+    cd /root/Downloads/links-latest
+    make -j "$core" uninstall
+    sudo snap install links
+elif [ "$links_version" = "2" ];then
+    sudo snap remove links
+    links_latest=$(lynx -dump http://links.twibright.com/download.php | awk '/http/{print $2}' | grep -i tar.gz | head -n 1)
+    sudo wget -O /root/Downloads/links-latest.tar.gz "$links_latest"
+    sudo mkdir -pv /root/Downloads/links-latest
+    tar xzvf /root/Downloads/links-latest.tar.gz -C /root/Downloads/links-latest --strip-components 1
+    cd /root/Downloads/links-latest
+    ./configure --enable-graphics
+    make -j "$core" && make -j "$core" install
+else
+    echo "Out of options please choose between 1-2"
+fi
+;;
+
+34)
+#MongoDB
+printf "\nPlease Choose Your Desired MongoDB Version\n\n1-)MongoDB Official Repo (Stable) \n\
+2-)MongoDB (From Source)\n\nPlease Select Your MongoDB Version:"
+read -r mongodb_version
+if [ "$mongodb_version" = "1" ];then
+echo "[mongodb-org-5.0]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/redhat/8/mongodb-org/5.0/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/server-5.0.asc" > /etc/yum.repos.d/mongodb-org-5.0.repo
+    sudo dnf -vy install mongodb-org mongodb-org-database mongodb-database-tools mongodb-org-server mongodb-org-shell \
+    mongodb-org-mongos mongodb-org-tools mongodb-mongosh mongodb-org-database-tools-extra checkpolicy
+    sudo systemctl start mongod
+    sudo systemctl enable mongod
+
+elif [ "$mongodb_version" = "2" ];then
+    sudo dnf -vy remove mongodb-org mongodb-org-database mongodb-database-tools mongodb-org-server mongodb-org-shell \
+    mongodb-org-mongos mongodb-org-tools mongodb-mongosh mongodb-org-database-tools-extra checkpolicy
+    sudo dnf -vy install libcurl openssl xz-libs
+    mongodb_latest=$(lynx -dump https://www.mongodb.com/download-center/community/releases |  awk '/http/{print $2}' \
+    | grep -i rhel80 | grep -i .tgz | head -n 1)
+    sudo wget -O /root/Downloads/mongodb-latest.tar.gz "$mongodb_latest"
+    sudo mkdir -pv /root/Downloads/mongodb-latest
+    tar xzvf /root/Downloads/mongodb-latest.tar.gz -C /root/Downloads/mongodb-latest --strip-components 1
+    cd /root/Downloads/mongodb-latest
+    sudo cp /root/Downloads/mongodb-latest/bin/* /usr/local/bin/
+    sudo ln -s /root/Downloads/mongodb-latest/bin/* /usr/local/bin/
+echo "[mongodb-org-5.0]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/redhat/8/mongodb-org/5.0/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/server-5.0.asc" > /etc/yum.repos.d/mongodb-org-5.0.repo
+    sudo dnf -vy install mongodb-mongosh
+    sudo mkdir -pv /var/lib/mongo
+    sudo mkdir -pv /var/log/mongodb
+    sudo chown -R mongod:mongod /var/lib/mongo
+    sudo chown -R mongod:mongod /var/log/mongodb
+    sudo dnf -vy install checkpolicy
+    mongod --dbpath /var/lib/mongo --logpath /var/log/mongodb/mongod.log --fork
+    mongosh
+else
+    echo "Out of options please choose between 1-2"
+fi
+;;
+
+35)
+#Ansible
+printf "\nPlease Choose Your Desired Ansible Version\n\n1-)Ansible (From pip) \n\
+2-)Ansible (From Official Package Manager)\n\nPlease Select Your Ansible Version:"
+read -r ansible_version
+
+if [ "$ansible_version" = "1" ];then
+    sudo dnf -vy remove ansible
+    sudo dnf -vy python39 python39-devel
+    pip3.9 install ansible
+elif [ "$ansible_version" = "2" ];then
+    pip3.9 uninstall ansible -y
+    sudo dnf -vy install ansible
+else
+    echo "Out of options please choose between 1-2"
+fi
+
+;;
+
+36)
+#ClavAV
+printf "\nPlease Choose Your Desired ClamAV Version\n\n1-)ClamAV Official Repo (Stable) \n\
+2-)ClamAV (Compile From Source)\n\nPlease Select Your ClamAV Version:"
+read -r clamav_version
+if [ "$clamav_version" = "1" ];then
+    sudo dnf -vy install clamav clamav-filesystem clamav-data clamav-devel clamav-lib clamav-milter clamav-update
+elif [ "$clamav_version" = "2" ];then
+    sudo dnf -vy remove clamav clamav-filesystem clamav-data clamav-devel clamav-lib clamav-milter clamav-update
+    sudo dnf -vy install links
+    sudo dnf -vy install epel-release
+    sudo dnf -vy install dnf-plugins-core
+    sudo dnf -vy install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    sudo dnf -vy config-manager --set-enabled PowerTools | \
+    sudo dnf -vy config-manager --set-enabled powertools | true
+    sudo dnf -vy install \
+        `# install tools` \
+        gcc gcc-c++ make python3 python3-pip valgrind \
+        `# install clamav dependencies` \
+        bzip2-devel check-devel json-c-devel libcurl-devel libxml2-devel \
+        ncurses-devel openssl-devel pcre2-devel sendmail-devel zlib-devel json-glib json-devel
+    python3 -m pip install cmake pytest
+    #clamav_latest=$(lynx -dump https://www.clamav.net/downloads)
+    wget -O /root/Downloads/clamav-0.104.2.tar.gz https://www.clamav.net/downloads/production/clamav-0.104.2.tar.gz
+    sudo mkdir -pv /root/Downloads/clamav-0.104.2
+    tar xvf /root/Downloads/clamav-0.104.2.tar.gz -C /root/Downloads/clamav-0.104.2 --strip-components 1
+    cd /root/Downloads/clamav-0.104.2
+    mkdir build && cd build
+    cmake ..
+    cmake --build .
+    ctest
+    sudo cmake --build . --target install
+else
+    echo "Out of options please choose between 1-2"
+fi
 ;;
         esac
     fi
