@@ -1112,16 +1112,20 @@ elif [ "$opensshversion" = "2" ];then
     sudo dnf group install -y 'Development Tools'
     sudo dnf install -y zlib-devel openssl-devel pam-devel libselinux-devel
     sudo yum -y install audit-libs-devel autoconf automake gcc libX11-devel libselinux-devel make ncurses-devel openssl-devel p11-kit-devel perl-generators systemd-devel xauth pam-devel rpm-build zlib-devel
-    sudo mkdir /var/lib/sshd
-    sudo chmod -R 700 /var/lib/sshd/
-    sudo chown -R root:sys /var/lib/sshd/
-    sudo useradd -r -U -d /var/lib/sshd/ -c "sshd privsep" -s /bin/false sshd
+    #sudo mkdir /var/lib/sshd
+    #sudo chmod -R 700 /var/lib/sshd/
+    #sudo chown -R root:sys /var/lib/sshd/
+    #sudo useradd -r -U -d /var/lib/sshd/ -c "sshd privsep" -s /bin/false sshd
     sudo mkdir -pv /root/Downloads/openssh-latest
     opensshlatest=$(lynx -dump https://www.openssh.com/releasenotes.html | awk '/http/{print $2}' | grep -i p1.tar.gz | head -n 1)
     wget -O /root/Downloads/openssh-latest.tar.gz $opensshlatest
     tar -xvf /root/Downloads/openssh-latest.tar.gz -C /root/Downloads/openssh-latest --strip-components 1
     cd /root/Downloads/openssh-latest
-    ./configure --with-md5-passwords --with-pam --with-selinux --with-privsep-path=/var/lib/sshd/ --sysconfdir=/etc/ssh
+    ./configure --with-md5-passwords \
+                --with-pam \
+                --with-selinux \
+                --with-privsep-path=/opt/lib/sshd/ \
+                --sysconfdir=/opt/ssh
     make -j "$core" && make -j "$core" install
     systemctl restart sshd
 else
