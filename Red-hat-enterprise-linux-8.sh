@@ -383,8 +383,10 @@ fi
 
 6)
 #Apache2
-printf "\nPlease Choose Your Desired Apache Version\n\n1-)Apache 2(From Official Package)\n\
-2-)Apache Latest(Compile From Source)\n3-) Apache Latest (From .rpm file)\n\nPlease Select Your Apache Version:"
+printf "\nPlease Choose Your Desired Apache Version\n\n1-) Apache (From Official Package)\n\
+2-) Apache Latest(Compile From Source)\n3-) Apache Latest (From .rpm file with default spec file)\n\
+4-) Apache Latest (From .rpm file with custom .spec file only --prefix=/etc/httpd added)\
+\n\nPlease Select Your Apache Version:"
 read -r apacheversion
 if [ "$apacheversion" = "1" ];then
     sudo install apache2 -y
@@ -444,9 +446,26 @@ elif [ "$apacheversion" = "3" ];then
     wget -O /root/Downloads/httpd/httpd-2.4.52.tar.bz2 https://dlcdn.apache.org//httpd/httpd-2.4.52.tar.bz2
     sudo dnf -vy install autoconf libuuid-devel lua-devel \
     libxml2-devel python2 python39 python39-devel doxygen apr apr-util apr-util-devel \
-    perl make cmake gcc rpm-build pcre-devel
+    perl make cmake gcc rpm-build pcre-devel libselinux-devel
     cd /root/Downloads/httpd
     rpmbuild -tb httpd-2.4.52.tar.bz2
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-2.4.52-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/mod_ssl-2.4.52-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-devel-2.4.52-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-tools-2.4.52-1.x86_64.rpm
+    systemctl enable httpd
+    systemctl start httpd
+elif [ "$apacheversion" = "4" ];then
+    sudo dnf -vy remove httpd
+    sudo mkdir -pv /root/rpmbuild/SOURCES/httpd-2.4.52
+    wget -O /root/rpmbuild/SOURCES/httpd-2.4.52.tar.bz2 https://dlcdn.apache.org//httpd/httpd-2.4.52.tar.bz2
+    tar -xvf /root/rpmbuild/SOURCES/httpd-2.4.52.tar.bz2 -C /root/rpmbuild/SOURCES/httpd-2.4.52 --strip-components 1
+    sudo dnf -vy install autoconf libuuid-devel lua-devel \
+    libxml2-devel python2 python39 python39-devel doxygen apr apr-util apr-util-devel \
+    perl make cmake gcc rpm-build pcre-devel libselinux-devel
+    sudo cp -v /root/rpmbuild/SOURCES/httpd-2.4.52/httpd.spec /root/rpmbuild/SPECS/
+    sudo sed -i '/--enable-case-filter/a \ \ \ \ \ \ \ \ --prefix=/etc/httpd \\' /root/rpmbuild/SPECS/httpd.spec
+    rpmbuild -ba /root/rpmbuild/SPECS/httpd.spec
     sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-2.4.52-1.x86_64.rpm
     sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/mod_ssl-2.4.52-1.x86_64.rpm
     sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-devel-2.4.52-1.x86_64.rpm
@@ -526,13 +545,15 @@ fi
 
 #OpenSSL Installation Section
 printf "\nPlease Choose Your Desired OpenSSL Version\n\n1-)OpenSSL 1.1.1k (Official Package)\n2-)OpenSSL 3.0\n\
-3-)OpenSSL Latest(Compile From Source)\n\nPlease Select Your OpenSSL Version:"
+3-)OpenSSL 3 Latest(Compile From Source)\n4-)OpenSSL 1 Latest (Compile From Source)\n\
+5-)OpenSSL 1.1.1m (Create & Install .rpm file From .spec)\n\nPlease Select Your OpenSSL Version:"
 read -r opensslversion
 if [ "$opensslversion" = "1" ];then
     sudo dnf -vy install openssl-devel
 elif [ "$opensslversion" = "2" ];then
     sudo dnf -vy install openssl3 openssl3-devel openssl3-libs
 elif [ "$opensslversion" = "3" ];then
+    sudo rm -rf /root/Downloads/openssl-latest
     sudo dnf -vy install perl gcc
     openssl_latest=$(lynx -dump https://www.openssl.org/source/ | awk '{print $2}' | grep -iv '.asc\|sha\|fips'\
     | grep -i .tar.gz | tail -n 1)
@@ -545,9 +566,91 @@ elif [ "$opensslversion" = "3" ];then
     echo "export PATH="/usr/local/ssl/bin:"${PATH}""" >> ~/.bashrc
     ln -s /usr/local/lib64/libssl.so.3 /usr/lib64/libssl.so.3
     ln -s /usr/local/lib64/libcrypto.so.3 /usr/lib64/libcrypto.so.3
+elif [ "$opensslversion" = "4" ];then
+    #sudo dnf -vy remove openssl openssl-devel
+    sudo rm -rf /root/Downloads/openssl-latest
+    sudo dnf -vy group install 'Development Tools'
+    sudo dnf -vy install perl gcc
+    openssl_latest=$(lynx -dump https://www.openssl.org/source/ | awk '{print $2}' | grep -iv '.asc\|sha\|fips' \
+    | grep -i openssl-1 | head -n 1)
+    wget -O /root/Downloads/openssl-latest.tar.gz "$openssl_latest"
+    sudo mkdir -pv /root/Downloads/openssl-latest
+    tar -xvf /root/Downloads/openssl-latest.tar.gz -C /root/Downloads/openssl-latest --strip-components 1
+    cd /root/Downloads/openssl-latest
+    ./config #--prefix=/usr         \
+         #--openssldir=/etc/ssl \
+         #--libdir=lib          \
+         #shared                \
+         #zlib-dynamic
+    make -j "$core" && make -j "$core" install
+    echo "export PATH="/usr/local/ssl/bin:"${PATH}""" >> ~/.bashrc
+    source /root/.bashrc
+    #ln -s /usr/local/lib64/libssl.so.3 /usr/lib64/libssl.so.3
+    #ln -s /usr/local/lib64/libcrypto.so.3 /usr/lib64/libcrypto.so.3
+elif [ "$opensslversion" = "5" ];then
+    mkdir ~/openssl && cd ~/openssl
+    sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build
+    sudo dnf -vy remove openssl openssl-devel
+    wget -O /root/rpmbuild/SOURCES/openssl-1.1.1m.tar.gz https://www.openssl.org/source/openssl-1.1.1m.tar.gz
+cat << 'EOF' > /root/rpmbuild/SPECS/openssl.spec
+Summary: OpenSSL 1.1.1m for RedHat
+Name: openssl
+Version: %{?version}%{!?version:1.1.1m}
+Release: 1%{?dist}
+Obsoletes: %{name} <= %{version}
+Provides: %{name} = %{version}
+URL: https://www.openssl.org/
+License: GPLv2+
+Source: https://www.openssl.org/source/%{name}-%{version}.tar.gz
+BuildRequires: make gcc perl perl-WWW-Curl
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+%global openssldir /usr/openssl
+%description
+https://github.com/philyuchkoff/openssl-RPM-Builder
+OpenSSL RPM for version 1.1.1m on RedHat
+%package devel
+Summary: Development files for programs which will use the openssl library
+Group: Development/Libraries
+Requires: %{name} = %{version}-%{release}
+%description devel
+OpenSSL RPM for version 1.1.1m on RedHat (development package)
+%prep
+%setup -q
+%build
+./config --prefix=%{openssldir} --openssldir=%{openssldir}
+make
+%install
+[ "%{buildroot}" != "/" ] && %{__rm} -rf %{buildroot}
+%make_install
+mkdir -p %{buildroot}%{_bindir}
+mkdir -p %{buildroot}%{_libdir}
+ln -sf %{openssldir}/lib/libssl.so.1.1 %{buildroot}%{_libdir}
+ln -sf %{openssldir}/lib/libcrypto.so.1.1 %{buildroot}%{_libdir}
+ln -sf %{openssldir}/bin/openssl %{buildroot}%{_bindir}
+%clean
+[ "%{buildroot}" != "/" ] && %{__rm} -rf %{buildroot}
+%files
+%{openssldir}
+%defattr(-,root,root)
+/usr/bin/openssl
+/usr/lib64/libcrypto.so.1.1
+/usr/lib64/libssl.so.1.1
+%files devel
+%{openssldir}/include/*
+%defattr(-,root,root)
+%post -p /sbin/ldconfig
+%postun -p /sbin/ldconfig
+EOF
+    cd /root/rpmbuild/SPECS && \
+        rpmbuild \
+        -D 'debug_package %{nil}' \
+        -ba openssl.spec
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-1.1.1m-1.el8.x86_64.rpm --nodeps --force
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-1.1.1m-1.el8.x86_64.rpm
 else
-    echo "Out of options please choose between 1-3"
+    echo "Out of options please choose between 1-5"
 fi
+printf "\nOpenSSL Installation Has Finished \n\n"
 #----------------------------------------------------------------------------------------
 #Nginx installation section
 printf "\nPlease Choose Your Desired Nginx Version\n\n1-)Nginx (Official Package)\n\
@@ -634,7 +737,8 @@ fi
 # OpenSSL
 #OpenSSL Installation Section
 printf "\nPlease Choose Your Desired OpenSSL Version\n\n1-)OpenSSL 1.1.1k (Official Package)\n2-)OpenSSL 3.0\n\
-3-)OpenSSL 3 Latest(Compile From Source)\n4-)OpenSSL 1 Latest (Compile From Source)\n\nPlease Select Your OpenSSL Version:"
+3-)OpenSSL 3 Latest(Compile From Source)\n4-)OpenSSL 1 Latest (Compile From Source)\n\
+5-)OpenSSL 1.1.1m (Create & Install .rpm file From .spec)\n\nPlease Select Your OpenSSL Version:"
 read -r opensslversion
 if [ "$opensslversion" = "1" ];then
     sudo dnf -vy install openssl-devel
@@ -675,8 +779,68 @@ elif [ "$opensslversion" = "4" ];then
     source /root/.bashrc
     #ln -s /usr/local/lib64/libssl.so.3 /usr/lib64/libssl.so.3
     #ln -s /usr/local/lib64/libcrypto.so.3 /usr/lib64/libcrypto.so.3
+elif [ "$opensslversion" = "5" ];then
+    mkdir ~/openssl && cd ~/openssl
+    sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build
+    sudo dnf -vy remove openssl openssl-devel
+    wget -O /root/rpmbuild/SOURCES/openssl-1.1.1m.tar.gz https://www.openssl.org/source/openssl-1.1.1m.tar.gz
+cat << 'EOF' > /root/rpmbuild/SPECS/openssl.spec
+Summary: OpenSSL 1.1.1m for RedHat
+Name: openssl
+Version: %{?version}%{!?version:1.1.1m}
+Release: 1%{?dist}
+Obsoletes: %{name} <= %{version}
+Provides: %{name} = %{version}
+URL: https://www.openssl.org/
+License: GPLv2+
+Source: https://www.openssl.org/source/%{name}-%{version}.tar.gz
+BuildRequires: make gcc perl perl-WWW-Curl
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+%global openssldir /usr/openssl
+%description
+https://github.com/philyuchkoff/openssl-RPM-Builder
+OpenSSL RPM for version 1.1.1m on RedHat
+%package devel
+Summary: Development files for programs which will use the openssl library
+Group: Development/Libraries
+Requires: %{name} = %{version}-%{release}
+%description devel
+OpenSSL RPM for version 1.1.1m on RedHat (development package)
+%prep
+%setup -q
+%build
+./config --prefix=%{openssldir} --openssldir=%{openssldir}
+make
+%install
+[ "%{buildroot}" != "/" ] && %{__rm} -rf %{buildroot}
+%make_install
+mkdir -p %{buildroot}%{_bindir}
+mkdir -p %{buildroot}%{_libdir}
+ln -sf %{openssldir}/lib/libssl.so.1.1 %{buildroot}%{_libdir}
+ln -sf %{openssldir}/lib/libcrypto.so.1.1 %{buildroot}%{_libdir}
+ln -sf %{openssldir}/bin/openssl %{buildroot}%{_bindir}
+%clean
+[ "%{buildroot}" != "/" ] && %{__rm} -rf %{buildroot}
+%files
+%{openssldir}
+%defattr(-,root,root)
+/usr/bin/openssl
+/usr/lib64/libcrypto.so.1.1
+/usr/lib64/libssl.so.1.1
+%files devel
+%{openssldir}/include/*
+%defattr(-,root,root)
+%post -p /sbin/ldconfig
+%postun -p /sbin/ldconfig
+EOF
+    cd /root/rpmbuild/SPECS && \
+        rpmbuild \
+        -D 'debug_package %{nil}' \
+        -ba openssl.spec
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-1.1.1m-1.el8.x86_64.rpm --nodeps --force
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-1.1.1m-1.el8.x86_64.rpm
 else
-    echo "Out of options please choose between 1-2"
+    echo "Out of options please choose between 1-5"
 fi
 printf "\nOpenSSL Installation Has Finished \n\n"
 ;;
