@@ -905,9 +905,28 @@ elif [ "$opensshversion" = "3" ];then
     sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/openssh-8.8p1-1.el8.x86_64.rpm
     sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/openssh-clients-8.8p1-1.el8.x86_64.rpm
     sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/openssh-server-8.8p1-1.el8.x86_64.rpm
+    sudo dnf -vy install git
+    sed -i -e "s/#PermitRootLogin prohibit-password/PermitRootLogin yes/g" /etc/ssh/sshd_config
+    sed -i -e "s/#PasswordAuthentication yes/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+    sed -i -e "s/#UsePAM no/UsePAM yes/g" /etc/ssh/sshd_config
     chmod 600 /etc/ssh/ssh_host_rsa_key
     chmod 600 /etc/ssh/ssh_host_ecdsa_key
     chmod 600 /etc/ssh/ssh_host_ed25519_key
+echo "#%PAM-1.0
+auth       required     pam_sepermit.so
+auth       substack     password-auth
+auth       include      postlogin
+account    required     pam_nologin.so
+account    include      password-auth
+password   include      password-auth
+# pam_selinux.so close should be the first session rule
+session    required     pam_selinux.so close
+session    required     pam_loginuid.so
+# pam_selinux.so open should only be followed by sessions to be executed in the user context
+session    required     pam_selinux.so open env_params
+session    optional     pam_keyinit.so force revoke
+session    include      password-auth
+session    include      postlogin" > /etc/pam.d/sshd
     systemctl restart sshd
 else
     echo "Out of options please choose between 1-3"  
