@@ -3,6 +3,7 @@
 # Variables
 cpuarch=$(uname -m)
 core=$(nproc)
+local_ip=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
 # Select Which Softwares to be Installed
 
 choice () {
@@ -269,7 +270,7 @@ elif [ "$phpversion" = "4" ];then
 elif [ "$phpversion" = "5" ];then
     sudo dnf -vy module enable php:remi-8.1
     sudo dnf -vy install php php-cli php-common php-fpm php-mysqlnd php-xml php-xmlrpc php-curl php-gd \
-    php-imagick php-mbstring php-opcache php-soap php-zip php-ioncube-loader php-devel
+    php-imagick php-mbstring php-opcache php-soap php-zip php-devel
 else
     echo "Out of option Please Choose between 1-5"
 :
@@ -478,7 +479,7 @@ elif [ "$apacheversion" = "4" ];then
     systemctl enable httpd
     systemctl start httpd
 else
-    echo "Out of options please choose between 1-3"
+    echo "Out of options please choose between 1-4"
 fi
 
 
@@ -668,8 +669,8 @@ elif [ "$nginxversion" = "2" ];then
     nginx_latest=$(lynx -dump http://nginx.org/en/download.html | awk '{print $2}' | grep -iv '.asc\|.zip' \
     | grep -i .tar.gz | head -n 1)
     mkdir -pv /root/Downloads/nginx_latest
-    wget -O /root/Downloads/nginx_latest/nginx_latest.tar.gz "$nginx_latest"
-    tar -xvf /root/Downloads/nginx_latest/nginx_latest.tar.gz -C /root/Downloads/nginx-latest --strip-components 1
+    wget -O /root/Downloads/nginx_latest.tar.gz "$nginx_latest"
+    tar -xvf /root/Downloads/nginx_latest/nginx_latest.tar.gz -C /root/Downloads/nginx_latest --strip-components 1
     cd /root/Downloads/nginx_latest
     ./configure --prefix=/var/www/html --sbin-path=/usr/sbin/nginx --conf-path=/etc/nginx/nginx.conf \
     --http-log-path=/var/log/nginx/access.log --error-log-path=/var/log/nginx/error.log --with-pcre  \
@@ -853,7 +854,7 @@ printf "\nOpenSSL Installation Has Finished \n\n"
 12)
 #OpenSSH Server
 printf "\nPlease Choose Your Desired OpenSSH Version \n\n1-)OpenSSH Server (Official Package)\n\
-2-)OpenSSH Latest (Compile From Source)\n\nPlease Select Your OpenSSH Version:"
+2-)OpenSSH Latest (Compile From Source)\n3-)OpenSSH Latest (With .rpm File)\nPlease Select Your OpenSSH Version:"
 read -r opensshversion
 if [ "$opensshversion" = "1" ];then
     cd /root/Downloads/openssh-latest
@@ -870,7 +871,8 @@ elif [ "$opensshversion" = "2" ];then
     #sudo chown -R root:sys /var/lib/sshd/
     #sudo useradd -r -U -d /var/lib/sshd/ -c "sshd privsep" -s /bin/false sshd
     sudo mkdir -pv /root/Downloads/openssh-latest
-    opensshlatest=$(lynx -dump https://www.openssh.com/releasenotes.html | awk '/http/{print $2}' | grep -i p1.tar.gz | head -n 1)
+    opensshlatest=$(lynx -dump https://www.openssh.com/releasenotes.html | awk '/http/{print $2}' \
+    | grep -i p1.tar.gz | head -n 1)
     wget -O /root/Downloads/openssh-latest.tar.gz "$opensshlatest"
     tar -xvf /root/Downloads/openssh-latest.tar.gz -C /root/Downloads/openssh-latest --strip-components 1
     cd /root/Downloads/openssh-latest
@@ -881,8 +883,34 @@ elif [ "$opensshversion" = "2" ];then
                 --sysconfdir=/opt/ssh
     make -j "$core" && make -j "$core" install
     systemctl restart sshd
+elif [ "$opensshversion" = "3" ];then
+    sudo dnf -vy install gcc zlib zlib-devel compat-openssl10 openssl openssl-devel zlib-devel openssl-devel pam-devel \
+    libselinux-devel audit-libs-devel autoconf automake gcc libX11-devel libselinux-devel make ncurses-devel \
+    openssl-devel p11-kit-devel perl-generators systemd-devel xauth pam-devel rpm-build zlib-devel \
+    rpm-build rpmdevtools rpmlint gtk2-devel imake libXt-devel openssl-devel perl
+    sudo dnf -vy group install 'Development Tools'
+    opensshlatest=$(lynx -dump https://www.openssh.com/releasenotes.html | awk '/http/{print $2}' \
+    | grep -i p1.tar.gz | head -n 1)
+    sudo mkdir -pv /root/rpmbuild/SOURCES/openssh-8.8p1
+    sudo mkdir -pv /root/rpmbuild/SPECS
+    wget -O /root/rpmbuild/SOURCES/openssh-8.8p1.tar.gz "$opensshlatest"
+    wget -O /root/rpmbuild/SOURCES/x11-ssh-askpass-1.2.4.1.tar.gz \
+    https://mirrors.slackware.com/slackware/slackware-14.2/source/xap/x11-ssh-askpass/x11-ssh-askpass-1.2.4.1.tar.gz
+    tar -xvf /root/rpmbuild/SOURCES/openssh-8.8p1.tar.gz -C /root/rpmbuild/SOURCES/openssh-8.8p1 --strip-components 1
+    sudo cp -v /root/rpmbuild/SOURCES/openssh-8.8p1/contrib/redhat/openssh.spec /root/rpmbuild/SPECS/openssh.spec
+    sed -i -e "s/BuildRequires: openssl-devel >= 1.0.1/#BuildRequires: openssl-devel >= 1.0.1/g" /root/rpmbuild/SPECS/openssh.spec
+    sed -i -e "s/BuildRequires: openssl-devel < 1.1/#BuildRequires: openssl-devel < 1.1/g" /root/rpmbuild/SPECS/openssh.spec
+    rpmbuild -ba /root/rpmbuild/SPECS/openssh.spec
+    sudo dnf -vy remove openssh openssh-clients openssh-server
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/openssh-8.8p1-1.el8.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/openssh-clients-8.8p1-1.el8.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/openssh-server-8.8p1-1.el8.x86_64.rpm
+    chmod 600 /etc/ssh/ssh_host_rsa_key
+    chmod 600 /etc/ssh/ssh_host_ecdsa_key
+    chmod 600 /etc/ssh/ssh_host_ed25519_key
+    systemctl restart sshd
 else
-    echo "Out of options please choose between 1-2"  
+    echo "Out of options please choose between 1-3"  
 fi
 ;;
 
@@ -1237,7 +1265,9 @@ sudo snap install flutter --classic
 printf "\nPlease Choose Your Desired Zabbix Option\n\n1-)Zabbix Server 4.0 LTS (Mysql & Apache)\n\
 2-)Zabbix Server 4.0 LTS (PostgreSQL & Apache)\n3-)Zabbix Server 5.0 LTS (Mysql & Apache)\n\
 4-)Zabbix Server 5.0 LTS (Mysql & NGINX)\n5-)Zabbix Server 5.0 LTS (PostgreSQL & Apache)\n\
-6-)Zabbix Server 5.0 LTS (PostgreSQL & NGINX)\n\nPlease Select Your Zabbix Option:"
+6-)Zabbix Server 5.0 LTS (PostgreSQL & NGINX)\n7-)Zabbix Server 6.0 LTS (Mysql & Apache)\n\
+8-)Zabbix Server 6.0 LTS (Mysql & NGINX)\n9-)Zabbix Server 6.0 LTS (PostgreSQL & Apache)\n\
+10-)Zabbix Server 6.0 LTS (PostgreSQL & NGINX)\n\nPlease Select Your Zabbix Option:"
 read -r zabbix_option
 if [ "$zabbix_option" = "1" ];then
     printf "Please Enter Desired Mysql Password:"
@@ -1259,7 +1289,7 @@ if [ "$zabbix_option" = "1" ];then
     sudo systemctl enable zabbix-server zabbix-agent httpd
 elif [ "$zabbix_option" = "2" ];then
     printf "Please Enter Desired PostgreSQL Password:"
-    read -r PGPASSWORD
+    read -r pgpassword
     sudo rpm -Uvh https://repo.zabbix.com/zabbix/4.0/rhel/8/x86_64/zabbix-release-4.0-2.el8.noarch.rpm
     dnf clean all
     sudo yum -y install postgresql postgresql-server postgresql-contrib
@@ -1271,7 +1301,7 @@ elif [ "$zabbix_option" = "2" ];then
     sudo -u postgres createuser --pwprompt zabbix
     sudo -u postgres createdb -O zabbix zabbix
     zcat /usr/share/doc/zabbix-server-pgsql*/create.sql.gz | sudo -u zabbix psql zabbix
-    sed -i "s/DBPassword=/DBPassword=$PGPASSWORD/g" /etc/zabbix/zabbix_server.conf
+    sed -i "s/DBPassword=/DBPassword=$pgpassword/g" /etc/zabbix/zabbix_server.conf
     echo "php_value[date.timezone] = UTC" >> /etc/php-fpm.d/zabbix.conf
     systemctl restart zabbix-server zabbix-agent httpd php-fpm
     systemctl enable zabbix-server zabbix-agent httpd php-fpm
@@ -1315,11 +1345,11 @@ elif [ "$zabbix_option" = "4" ];then
     sudo systemctl enable zabbix-server zabbix-agent httpd
 elif [ "$zabbix_option" = "5" ];then
     printf "Please Enter Desired PostgreSQL Password:"
-    read -r PGPASSWORD
+    read -r pgpassword
     sudo rpm -Uvh https://repo.zabbix.com/zabbix/5.0/rhel/8/x86_64/zabbix-release-5.0-1.el8.noarch.rpm
     dnf clean all
-    sudo yum -y install postgresql postgresql-server postgresql-contrib
-    sudo dnf -y install zabbix-server-pgsql zabbix-web-pgsql zabbix-agent httpd httpd-devel
+    sudo dnf -vy install postgresql postgresql-server postgresql-contrib
+    sudo dnf -vy install zabbix-server-pgsql zabbix-web-pgsql zabbix-agent httpd httpd-devel
     sudo postgresql-setup --initdb
     sudo systemctl start postgresql
     sudo systemctl enable postgresql
@@ -1327,31 +1357,104 @@ elif [ "$zabbix_option" = "5" ];then
     sudo -u postgres createuser --pwprompt zabbix
     sudo -u postgres createdb -O zabbix zabbix
     zcat /usr/share/doc/zabbix-server-pgsql*/create.sql.gz | sudo -u zabbix psql zabbix
-    sed -i "s/DBPassword=/DBPassword=$PGPASSWORD/g" /etc/zabbix/zabbix_server.conf
+    sed -i "s/DBPassword=/DBPassword=$pgpassword/g" /etc/zabbix/zabbix_server.conf
     echo "php_value[date.timezone] = UTC" >> /etc/php-fpm.d/zabbix.conf
     systemctl restart zabbix-server zabbix-agent httpd php-fpm
     systemctl enable zabbix-server zabbix-agent httpd php-fpm
 elif [ "$zabbix_option" = "6" ];then
     printf "Please Enter Desired PostgreSQL Password:"
-    read -r PGPASSWORD
+    read -r pgpassword
     sudo rpm -Uvh https://repo.zabbix.com/zabbix/5.0/rhel/8/x86_64/zabbix-release-5.0-1.el8.noarch.rpm
     dnf clean all
-    sudo yum -y install postgresql postgresql-server postgresql-contrib
-    sudo dnf install -y zabbix-server-mysql zabbix-web-mysql zabbix-nginx-conf zabbix-sql-scripts zabbix-agent mysql \
-    mysql-devel mysql-server
+    sudo dnf -vy install postgresql postgresql-server postgresql-contrib
+    sudo dnf -vy install zabbix-server-mysql zabbix-web-mysql zabbix-nginx-conf zabbix-sql-scripts zabbix-agent
     sudo postgresql-setup --initdb
     sudo systemctl start postgresql
     sudo systemctl enable postgresql
-    echo "Please Enter Your Zabbix User Password"
+    echo "Please Enter Your PostgreSQL Zabbix User Password"
     sudo -u postgres createuser --pwprompt zabbix
     sudo -u postgres createdb -O zabbix zabbix
     zcat /usr/share/doc/zabbix-server-pgsql*/create.sql.gz | sudo -u zabbix psql zabbix
-    sed -i "s/DBPassword=/DBPassword=$PGPASSWORD/g" /etc/zabbix/zabbix_server.conf
+    sed -i "s/DBPassword=/DBPassword=$pgpassword/g" /etc/zabbix/zabbix_server.conf
     echo "php_value[date.timezone] = UTC" >> /etc/php-fpm.d/zabbix.conf
     systemctl restart zabbix-server zabbix-agent httpd php-fpm
     systemctl enable zabbix-server zabbix-agent httpd php-fpm
+elif [ "$zabbix_option" = "7" ];then
+    printf "Please Enter Desired Mysql Password:"
+    read -r mysqlpassword
+    sudo rpm -Uvh https://repo.zabbix.com/zabbix/6.0/rhel/8/x86_64/zabbix-release-6.0-1.el8.noarch.rpm
+    sudo dnf -v clean all
+    sudo dnf -vy install zabbix-server-mysql zabbix-web-mysql zabbix-apache-conf zabbix-sql-scripts \
+    zabbix-selinux-policy zabbix-agent mysql mysql-devel mysql-server httpd httpd-devel
+    sudo systemctl start mysqld
+    sudo systemctl enable mysqld
+    sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '$mysqlpassword';"
+    sudo systemctl restart mysqld.service
+    sudo mysql -uroot -p"$mysqlpassword" -e "create database zabbix character set utf8mb4 collate utf8mb4_bin;"
+    sudo mysql -uroot -p"$mysqlpassword" -e "create user zabbix@localhost identified by '$mysqlpassword';"
+    sudo mysql -uroot -p"$mysqlpassword" -e "grant all privileges on zabbix.* to zabbix@localhost;"
+    zcat /usr/share/doc/zabbix-sql-scripts/mysql/server.sql.gz | mysql -uzabbix -p"$mysqlpassword" zabbix
+    sed -i "s/# DBPassword=/DBPassword=$mysqlpassword/g" /etc/zabbix/zabbix_server.conf
+    echo "php_value[date.timezone] = UTC" >> /etc/php-fpm.d/zabbix.conf
+    sudo systemctl restart zabbix-server zabbix-agent httpd php-fpm
+    sudo systemctl enable zabbix-server zabbix-agent httpd php-fpm
+elif [ "$zabbix_option" = "8" ];then
+    printf "Please Enter Desired Mysql Password:"
+    read -r mysqlpassword
+    sudo rpm -Uvh https://repo.zabbix.com/zabbix/6.0/rhel/8/x86_64/zabbix-release-6.0-1.el8.noarch.rpm
+    sudo dnf -v clean all
+    sudo dnf -vy install zabbix-server-mysql zabbix-web-mysql zabbix-nginx-conf zabbix-sql-scripts \
+    zabbix-selinux-policy zabbix-agent mysql mysql-devel mysql-server nginx
+    sudo systemctl start mysqld
+    sudo systemctl enable mysqld
+    sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '$mysqlpassword';"
+    sudo systemctl restart mysqld.service
+    sudo mysql -uroot -p"$mysqlpassword" -e "create database zabbix character set utf8mb4 collate utf8mb4_bin;"
+    sudo mysql -uroot -p"$mysqlpassword" -e "create user zabbix@localhost identified by '$mysqlpassword';"
+    sudo mysql -uroot -p"$mysqlpassword" -e "grant all privileges on zabbix.* to zabbix@localhost;"
+    zcat /usr/share/doc/zabbix-sql-scripts/mysql/server.sql.gz | mysql -uzabbix -p"$mysqlpassword" zabbix
+    sed -i "s/#        listen          80;/listen 80;/g" /etc/nginx/conf.d/zabbix.conf
+    sed -i "s/#        server_name     example.com;/server_name $local_ip;/g" /etc/nginx/conf.d/zabbix.conf
+    sudo systemctl restart zabbix-server zabbix-agent nginx php-fpm
+    sudo systemctl enable zabbix-server zabbix-agent nginx php-fpm
+elif [ "$zabbix_option" = "9" ];then
+    printf "Please Enter Desired PostgreSQL Password:"
+    read -r pgpassword
+    sudo rpm -Uvh https://repo.zabbix.com/zabbix/6.0/rhel/8/x86_64/zabbix-release-6.0-1.el8.noarch.rpm
+    sudo dnf -v clean all
+    sudo dnf -vy install zabbix-server-pgsql zabbix-web-pgsql zabbix-apache-conf zabbix-sql-scripts \
+    zabbix-selinux-policy zabbix-agent postgresql postgresql-server postgresql-contrib httpd httpd-devel
+    sudo postgresql-setup --initdb
+    sudo systemctl start postgresql
+    sudo systemctl enable postgresql
+    echo "Please Enter Your PostgreSQL Zabbix User Password"
+    sudo -u postgres createuser --pwprompt zabbix
+    sudo -u postgres createdb -O zabbix zabbix
+    zcat /usr/share/doc/zabbix-sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psql
+    sed -i "s/# DBPassword=/DBPassword=$pgpassword/g" /etc/zabbix/zabbix_server.conf
+    sudo systemctl restart zabbix-server zabbix-agent httpd php-fpm
+    sudo systemctl enable zabbix-server zabbix-agent httpd php-fpm
+elif [ "$zabbix_option" = "10" ];then
+    printf "Please Enter Desired PostgreSQL Password:"
+    read -r pgpassword
+    sudo rpm -Uvh https://repo.zabbix.com/zabbix/6.0/rhel/8/x86_64/zabbix-release-6.0-1.el8.noarch.rpm
+    sudo dnf -v clean all
+    sudo dnf -vy install zabbix-server-pgsql zabbix-web-pgsql zabbix-nginx-conf zabbix-sql-scripts \
+    zabbix-selinux-policy zabbix-agent postgresql postgresql-server postgresql-contrib nginx
+    sudo postgresql-setup --initdb
+    sudo systemctl start postgresql
+    sudo systemctl enable postgresql
+    echo "Please Enter Your PostgreSQL Zabbix User Password"
+    sudo -u postgres createuser --pwprompt zabbix
+    sudo -u postgres createdb -O zabbix zabbix
+    zcat /usr/share/doc/zabbix-sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psql
+    sed -i "s/DBPassword=/DBPassword=$pgpassword/g" /etc/zabbix/zabbix_server.conf
+    sed -i "s/# listen 80;/listen 80;/g" /etc/nginx/conf.d/zabbix.conf
+    sed -i "s/# server_name example.com;/server_name $local_ip;/g" /etc/nginx/conf.d/zabbix.conf
+    sudo systemctl restart zabbix-server zabbix-agent nginx php-fpm
+    sudo systemctl enable zabbix-server zabbix-agent nginx php-fpm
 else
-    echo "Out of options please choose between 1-6"
+    echo "Out of options please choose between 1-10"
 fi
 ;;
 
