@@ -20,14 +20,14 @@ Please enter your choice(s): '
 while :
 do
 clear
-options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "WineHQ Latest ${opts[4]}" "FFmpeg ${opts[5]}" 
-"Apache ${opts[6]}" "Transmission ${opts[7]}" "Nmap ${opts[8]}" "Nginx ${opts[9]}" "Redis ${opts[10]}" 
-"OpenSSL ${opts[11]}" "OpenSSH ${opts[12]}" "GoCD ${opts[13]}" "OpenJDK 8-11-17 ${opts[14]}" "DVBlast 3.4 ${opts[15]}" 
-"Linux Kernel ${opts[16]}" "Samba ${opts[17]}" "Mysql ${opts[18]}" "Mysql Router ${opts[19]}" 
-"Ruby ${opts[20]}" "Flutter ${opts[21]}" "Zabbix Server ${opts[22]}" "UrBackup Server ${opts[23]}" 
-"MariaDB ${opts[24]}" "PostgreSQL ${opts[25]}" "Postman ${opts[26]}" "Docker ${opts[27]}" 
-"Jenkins ${opts[28]}" "Nodejs & Npm ${opts[29]}" "Tinc ${opts[30]}" "Irssi ${opts[31]}" "OpenNebula ${opts[32]}" 
-"Links ${opts[33]}" "MongoDB ${opts[34]}" "Ansible ${opts[35]}" "ClamAV ${opts[36]}" "Graylog ${opts[37]}" 
+options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "WineHQ Latest ${opts[4]}" "FFmpeg ${opts[5]}"
+"Apache ${opts[6]}" "Transmission ${opts[7]}" "Nmap ${opts[8]}" "Nginx ${opts[9]}" "Redis ${opts[10]}"
+"OpenSSL ${opts[11]}" "OpenSSH ${opts[12]}" "GoCD ${opts[13]}" "OpenJDK 8-11-17 ${opts[14]}" "DVBlast 3.4 ${opts[15]}"
+"Linux Kernel ${opts[16]}" "Samba ${opts[17]}" "Mysql ${opts[18]}" "Mysql Router ${opts[19]}"
+"Ruby ${opts[20]}" "Flutter ${opts[21]}" "Zabbix Server ${opts[22]}" "UrBackup Server ${opts[23]}"
+"MariaDB ${opts[24]}" "PostgreSQL ${opts[25]}" "Postman ${opts[26]}" "Docker ${opts[27]}"
+"Jenkins ${opts[28]}" "Nodejs & Npm ${opts[29]}" "Tinc ${opts[30]}" "Irssi ${opts[31]}" "OpenNebula ${opts[32]}"
+"Links ${opts[33]}" "MongoDB ${opts[34]}" "Ansible ${opts[35]}" "ClamAV ${opts[36]}" "Graylog ${opts[37]}"
 "Done ${opts[38]}")
     select opt in "${options[@]}"
     do
@@ -243,14 +243,14 @@ for opt in "${!opts[@]}"
 do
     if [[ ${opts[opt]} ]]
     then
-        case $opt in 
+        case $opt in
 
 1)
 #PHP 7.2 - 8.1
 sudo dnf -vy install https://rpms.remirepo.net/enterprise/remi-release-8.rpm
 printf "\nPlease Choose Your Desired PHP Version\n\n1-)PHP 7.2\n2-)PHP 7.3\n3-)PHP 7.4\n4-)PHP 8.0\n5-)PHP 8.1\
 \n\nPlease Select Your PHP Version:"
-read phpversion
+read -r phpversion
 if [ "$phpversion" = "1" ];then
     sudo dnf -vy module enable php:remi-7.2
     sudo dnf -vy install php php-cli php-common php-fpm php-mysqlnd php-xml php-xmlrpc php-curl php-gd \
@@ -297,7 +297,7 @@ sudo make -j "$core" install
 #Python
 printf "\nPlease Choose Your Desired Python Version\n\n1-)Python 2 (Official Package)\n2-)Python 3.6 (Official Package)\n\
 3-)Python 3.8 (Official Package)\n4-)Python 3.9 (Official Package)\n\nPlease Select Your Python Version:"
-read python_version
+read -r python_version
 if [ "$python_version" = "1" ];then
     sudo dnf -vy install python2 python2-devel
 elif [ "$python_version" = "2" ];then
@@ -410,7 +410,7 @@ elif [ "$apacheversion" = "2" ];then
     mkdir -pv /root/Downloads/apr-1.7.0
     tar -xvf /root/Downloads/apr-1.7.0.tar.gz -C /root/Downloads/apr-1.7.0 --strip-components 1
     mkdir -pv /root/Downloads/httpd-latest/srclib/apr
-    cp -rf /root/Downloads/apr-1.7.0/* /root/Downloads/httpd-latest/srclib/apr 
+    cp -rf /root/Downloads/apr-1.7.0/* /root/Downloads/httpd-latest/srclib/apr
 
     wget -O /root/Downloads/apr-util-1.6.1.tar.gz https://dlcdn.apache.org//apr/apr-util-1.6.1.tar.gz
     mkdir -pv /root/Downloads/apr-util-1.6.1
@@ -452,7 +452,8 @@ elif [ "$apacheversion" = "3" ];then
     wget -O /root/Downloads/httpd/httpd-2.4.52.tar.bz2 https://dlcdn.apache.org//httpd/httpd-2.4.52.tar.bz2
     sudo dnf -vy install autoconf libuuid-devel lua-devel \
     libxml2-devel python2 python39 python39-devel doxygen apr apr-util apr-util-devel \
-    perl make cmake gcc rpm-build pcre-devel libselinux-devel
+    perl make cmake gcc rpm-build rpmdevtools rpmlint pcre-devel libselinux-devel
+    rpmdev-setuptree
     cd /root/Downloads/httpd
     rpmbuild -tb httpd-2.4.52.tar.bz2
     sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-2.4.52-1.x86_64.rpm
@@ -463,6 +464,8 @@ elif [ "$apacheversion" = "3" ];then
     systemctl start httpd
 elif [ "$apacheversion" = "4" ];then
     sudo dnf -vy remove httpd
+    sudo dnf -vy install rpm-build rpmdevtools rpmlint
+    rpmdev-setuptree
     sudo mkdir -pv /root/rpmbuild/SOURCES/httpd-2.4.52
     wget -O /root/rpmbuild/SOURCES/httpd-2.4.52.tar.bz2 https://dlcdn.apache.org//httpd/httpd-2.4.52.tar.bz2
     tar -xvf /root/rpmbuild/SOURCES/httpd-2.4.52.tar.bz2 -C /root/rpmbuild/SOURCES/httpd-2.4.52 --strip-components 1
@@ -594,8 +597,8 @@ elif [ "$opensslversion" = "4" ];then
     #ln -s /usr/local/lib64/libssl.so.3 /usr/lib64/libssl.so.3
     #ln -s /usr/local/lib64/libcrypto.so.3 /usr/lib64/libcrypto.so.3
 elif [ "$opensslversion" = "5" ];then
-    mkdir ~/openssl && cd ~/openssl
-    sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build
+    sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build rpmdevtools rpmlint
+    rpmdev-setuptree
     sudo dnf -vy remove openssl openssl-devel
     wget -O /root/rpmbuild/SOURCES/openssl-1.1.1m.tar.gz https://www.openssl.org/source/openssl-1.1.1m.tar.gz
 cat << 'EOF' > /root/rpmbuild/SPECS/openssl.spec
@@ -624,7 +627,7 @@ OpenSSL RPM for version 1.1.1m on RedHat (development package)
 %setup -q
 %build
 ./config --prefix=%{openssldir} --openssldir=%{openssldir}
-make
+make %{?_smp_mflags}
 %install
 [ "%{buildroot}" != "/" ] && %{__rm} -rf %{buildroot}
 %make_install
@@ -701,7 +704,7 @@ fi
 #------------------------------------------------------------
 sudo systemctl enable nginx
 sudo systemctl start nginx
-#sudo firewall-cmd --permanent --zone=public --add-service=http 
+#sudo firewall-cmd --permanent --zone=public --add-service=http
 #sudo firewall-cmd --permanent --zone=public --add-service=https
 #sudo firewall-cmd --reload
 
@@ -786,8 +789,8 @@ elif [ "$opensslversion" = "4" ];then
     #ln -s /usr/local/lib64/libssl.so.3 /usr/lib64/libssl.so.3
     #ln -s /usr/local/lib64/libcrypto.so.3 /usr/lib64/libcrypto.so.3
 elif [ "$opensslversion" = "5" ];then
-    mkdir ~/openssl && cd ~/openssl
-    sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build
+    sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build rpmdevtools rpmlint
+    rpmdev-setuptree
     sudo dnf -vy remove openssl openssl-devel
     wget -O /root/rpmbuild/SOURCES/openssl-1.1.1m.tar.gz https://www.openssl.org/source/openssl-1.1.1m.tar.gz
 cat << 'EOF' > /root/rpmbuild/SPECS/openssl.spec
@@ -816,7 +819,7 @@ OpenSSL RPM for version 1.1.1m on RedHat (development package)
 %setup -q
 %build
 ./config --prefix=%{openssldir} --openssldir=%{openssldir}
-make
+make %{?_smp_mflags}
 %install
 [ "%{buildroot}" != "/" ] && %{__rm} -rf %{buildroot}
 %make_install
@@ -888,6 +891,7 @@ elif [ "$opensshversion" = "3" ];then
     libselinux-devel audit-libs-devel autoconf automake gcc libX11-devel libselinux-devel make ncurses-devel \
     openssl-devel p11-kit-devel perl-generators systemd-devel xauth pam-devel rpm-build zlib-devel \
     rpm-build rpmdevtools rpmlint gtk2-devel imake libXt-devel openssl-devel perl
+    rpmdev-setuptree
     sudo dnf -vy group install 'Development Tools'
     opensshlatest=$(lynx -dump https://www.openssh.com/releasenotes.html | awk '/http/{print $2}' \
     | grep -i p1.tar.gz | head -n 1)
@@ -929,7 +933,7 @@ session    include      password-auth
 session    include      postlogin" > /etc/pam.d/sshd
     systemctl restart sshd
 else
-    echo "Out of options please choose between 1-3"  
+    echo "Out of options please choose between 1-3"
 fi
 ;;
 
@@ -1004,7 +1008,7 @@ fi
 
 15)
 #DVBlast 3.4
-sudo dnf -vy install gcc make libev-devel 
+sudo dnf -vy install gcc make libev-devel
 #sudo git clone https://github.com/gfto/bitstream.git /root/Downloads/bitstream
 #cd /root/Downloads/bitstream/
 #make -j "$core" install
@@ -1239,8 +1243,8 @@ elif [ "$mysqlversion" = "5" ];then
     mysql_community_icu_data_files=$(lynx -dump https://dev.mysql.com/downloads/file/?id=509907 | awk '/http/{print $2}' \
     | grep -i rpm | head -n 1)
     sudo wget -O /root/Downloads/mysql-community-server-latest.rpm "$mysql_community_server"
-    sudo wget -O /root/Downloads/mysql-community-client-latest.rpm "$mysql_community_client" 
-    sudo wget -O /root/Downloads/mysql-community-common-latest.rpm "$mysql_community_common" 
+    sudo wget -O /root/Downloads/mysql-community-client-latest.rpm "$mysql_community_client"
+    sudo wget -O /root/Downloads/mysql-community-common-latest.rpm "$mysql_community_common"
     sudo wget -O /root/Downloads/mysql-community-icu-data-files-latest.rpm "$mysql_community_icu_data_files"
     sudo rpm -Uvh mysql-community*
     systemctl start mysqld
@@ -1554,9 +1558,9 @@ elif [ "$mariadbversion" = "4" ];then
     sudo dnf -vy module reset mariadb
     sudo dnf -vy install MariaDB-server MariaDB-client MariaDB-backup
     sudo systemctl enable --now mariadb
-    sudo systemctl start mariadb 
+    sudo systemctl start mariadb
 else
-    echo "Out of options please choose between 1-4"  
+    echo "Out of options please choose between 1-4"
 fi
 ;;
 
@@ -1638,7 +1642,7 @@ systemctl enable docker
 sudo dnf -vy install java-1.8.0-openjdk
 sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
 sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
-sudo dnf -vy install jenkins 
+sudo dnf -vy install jenkins
 sudo systemctl start jenkins.service
 sudo systemctl enable jenkins.service
 sudo firewall-cmd --permanent --zone=public --add-port=8080/tcp
@@ -1683,7 +1687,7 @@ elif [ "$nodejsversion" = "4" ];then
     sudo dnf -vy install nodejs
     node --version
 else
-    echo "Out of options please choose between 1-4"  
+    echo "Out of options please choose between 1-4"
 fi
 ;;
 
@@ -1757,7 +1761,7 @@ fi
 sudo setenforce 0
 sudo sed -i 's/^SELINUX=.*/SELINUX=permissive/g' /etc/selinux/config
 cat /etc/selinux/config
-sudo tee /etc/yum.repos.d/opennebula.repo<< EOT 
+sudo tee /etc/yum.repos.d/opennebula.repo<< EOT
 [opennebula]
 name=opennebula
 baseurl=https://downloads.opennebula.org/repo/6.2/CentOS/8/x86_64
@@ -1914,15 +1918,15 @@ elif [ "$mysqlversion" = "5" ];then
     mysql_community_icu_data_files=$(lynx -dump https://dev.mysql.com/downloads/file/?id=509907 | awk '/http/{print $2}' \
     | grep -i rpm | head -n 1)
     sudo wget -O /root/Downloads/mysql-community-server-latest.rpm "$mysql_community_server"
-    sudo wget -O /root/Downloads/mysql-community-client-latest.rpm "$mysql_community_client" 
-    sudo wget -O /root/Downloads/mysql-community-common-latest.rpm "$mysql_community_common" 
+    sudo wget -O /root/Downloads/mysql-community-client-latest.rpm "$mysql_community_client"
+    sudo wget -O /root/Downloads/mysql-community-common-latest.rpm "$mysql_community_common"
     sudo wget -O /root/Downloads/mysql-community-icu-data-files-latest.rpm "$mysql_community_icu_data_files"
     sudo rpm -Uvh mysql-community*
     systemctl start mysqld
     systemctl enable mysqld
     printf "\nMysql 8 (Latest) Installation Has Finished.\n\n"
     else
-        echo "Out of options please choose between 1-5" 
+        echo "Out of options please choose between 1-5"
     fi
 elif [ "$database_option" = "2" ];then
     #MariaDB
@@ -1936,7 +1940,7 @@ printf "\nPlease Choose Your Desired MariaDB Version\n\n1-)MariaDB 10.3 (Officia
         sudo dnf -vy module reset mariadb
         sudo dnf -vy install mariadb mariadb-devel MariaDB-server MariaDB-client MariaDB-backup
         sudo systemctl enable --now mariadb
-        sudo systemctl start mariadb 
+        sudo systemctl start mariadb
     elif [ "$mariadbversion" = "2" ];then
         wget -O /root/Downloads/mariadb_repo_setup https://downloads.mariadb.com/MariaDB/mariadb_repo_setup
         sudo bash /root/Downloads/mariadb_repo_setup --mariadb-server-version=10.4
@@ -1962,7 +1966,7 @@ printf "\nPlease Choose Your Desired MariaDB Version\n\n1-)MariaDB 10.3 (Officia
         sudo systemctl enable --now mariadb
         sudo systemctl start mariadb 
     else
-        echo "Out of options please choose between 1-4"  
+        echo "Out of options please choose between 1-4"
     fi
 elif [ "$database_option" = "3" ];then
     printf "\nPlease Choose Your Desired PostgreSQL Version\n\n1-)PostgreSQL 9.6\n2-)PostgreSQL 10\n3-)PostgreSQL 11
@@ -2005,7 +2009,7 @@ elif [ "$database_option" = "3" ];then
         echo "Out of options please choose between 1-6"
     fi
 else
-    echo "Out of options please choose between 1-3"  
+    echo "Out of options please choose between 1-3"
 fi
 printf "\nPlease Enter Your Database Passoword:"
 read -r database_password
@@ -2167,7 +2171,7 @@ if [ "$graylog_version" = "1" ];then
 elif [ "$graylog_version" = "2" ];then
 echo "[graylog]
 name=graylog
-baseurl=https://packages.graylog2.org/repo/el/stable/4.2/$basearch/
+baseurl=https://packages.graylog2.org/repo/el/stable/4.2/x86_64/
 gpgcheck=1
 repo_gpgcheck=0
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-graylog" > /etc/yum.repos.d/graylog.repo
@@ -2279,7 +2283,7 @@ elif [ "$graylog_version" = "7" ];then
     sudo mkdir -pv /root/Downloads/graylog-latest/
     graylog_latest=$(lynx -dump https://www.graylog.org/downloads-2 | awk '/http/{print $2}' \
     | grep -iv 'enterprise\|plugins' | grep -i .tgz | head -n 1)
-    wget -O /root/Downloads/graylog-latest.tgz $graylog_latest
+    wget -O /root/Downloads/graylog-latest.tgz "$graylog_latest"
     tar -xvf /root/Downloads/graylog-latest.tgz -C /root/Downloads/graylog-latest --strip-components 1
     cd /root/Downloads/graylog-latest
     #OpenJDK 8-11-17 JDK
