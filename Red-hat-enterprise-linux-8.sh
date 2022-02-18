@@ -28,7 +28,7 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
 "MariaDB ${opts[24]}" "PostgreSQL ${opts[25]}" "Postman ${opts[26]}" "Docker ${opts[27]}"
 "Jenkins ${opts[28]}" "Nodejs & Npm ${opts[29]}" "Tinc ${opts[30]}" "Irssi ${opts[31]}" "OpenNebula ${opts[32]}"
 "Links ${opts[33]}" "MongoDB ${opts[34]}" "Ansible ${opts[35]}" "ClamAV ${opts[36]}" "Graylog ${opts[37]}"
-"VLC ${opts[38]}" "UFW ${opts[39]}" "Done ${opts[40]}")
+"VLC ${opts[38]}" "UFW ${opts[39]}" "Fail2ban ${opts[40]}" "Done ${opts[41]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -188,10 +188,14 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
                 choice 39
                 break
                 ;;
-            "Done ${opts[40]}")
+            "Fail2ban ${opts[40]}")
+                choice 40
+                break
+                ;;
+            "Done ${opts[41]}")
                 break 2
                 ;;
-            *) printf '%s\n' 'Please Choose Between 1-40';;
+            *) printf '%s\n' 'Please Choose Between 1-41';;
         esac
     done
 done
@@ -2353,6 +2357,19 @@ elif
 else
     echo "Out of options please choose between 1-2"
 fi
+;;
+40)
+sudo dnf -vy install fail2ban
+sudo systemctl start fail2ban
+sudo systemctl enable fail2ban
+echo "[sshd]
+enabled = true
+port = ssh
+action = iptables-multiport
+logpath = /var/log/secure
+maxretry = 5
+bantime = 60" > /etc/fail2ban/jail.d/sshd.local
+sudo systemctl restart fail2ban
 ;;
         esac
     fi
