@@ -28,7 +28,7 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
 "MariaDB ${opts[24]}" "PostgreSQL ${opts[25]}" "Postman ${opts[26]}" "Docker ${opts[27]}"
 "Jenkins ${opts[28]}" "Nodejs & Npm ${opts[29]}" "Tinc ${opts[30]}" "Irssi ${opts[31]}" "OpenNebula ${opts[32]}"
 "Links ${opts[33]}" "MongoDB ${opts[34]}" "Ansible ${opts[35]}" "ClamAV ${opts[36]}" "Graylog ${opts[37]}"
-"Done ${opts[38]}")
+"VLC ${opts[38]}" "UFW ${opts[39]}" "Done ${opts[40]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -180,10 +180,18 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
                 choice 37
                 break
                 ;;
-            "Done ${opts[38]}")
+            "VLC ${opts[38]}")
+                choice 38
+                break
+                ;;
+            "UFW ${opts[39]}")
+                choice 39
+                break
+                ;;
+            "Done ${opts[40]}")
                 break 2
                 ;;
-            *) printf '%s\n' 'Please Choose Between 1-38';;
+            *) printf '%s\n' 'Please Choose Between 1-40';;
         esac
     done
 done
@@ -2313,6 +2321,38 @@ else
     echo "Out of options please choose between 1-7"
 fi
 
+;;
+38)
+#VLC
+printf "\nPlease Choose Your Desired VLC Version\n1-)VLC(From Official Package)\n2-)VLC (Via Snap)\
+\nPlease Select Your VLC Version:"
+read -r vlc_version
+if [ "$vlc_version" = "1" ];then
+    sudo snap remove snap
+    sudo dnf -vy install vlc vlc-core python-vlc
+elif [ "$vlc_version" = "2" ];then
+    sudo dnf -vy remove vlc vlc-core python-vlc
+    sudo snap install vlc
+else
+    echo "Out of options please choose between 1-2"
+fi
+;;
+39)
+#UFW
+printf "\nPlease Choose Your Desired UFW Version\n1-)UFW(From Official Package)\n2-)UFW (Via Snap)\
+\nPlease Select Your UFW Version:"
+read -r ufw_version
+if [ "$ufw_version" = "1" ];then
+    sudo snap remove ufw
+    sudo dnf -vy install ufw
+    sudo systemctl start ufw
+    sudo systemctl enable ufw
+elif
+    sudo dnf -vy remove ufw
+    sudo snap ufw
+else
+    echo "Out of options please choose between 1-2"
+fi
 ;;
         esac
     fi
