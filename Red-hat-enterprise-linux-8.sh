@@ -28,7 +28,7 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
 "MariaDB ${opts[24]}" "PostgreSQL ${opts[25]}" "Postman ${opts[26]}" "Docker ${opts[27]}"
 "Jenkins ${opts[28]}" "Nodejs & Npm ${opts[29]}" "Tinc ${opts[30]}" "Irssi ${opts[31]}" "OpenNebula ${opts[32]}"
 "Links ${opts[33]}" "MongoDB ${opts[34]}" "Ansible ${opts[35]}" "ClamAV ${opts[36]}" "Graylog ${opts[37]}"
-"VLC ${opts[38]}" "UFW ${opts[39]}" "Fail2ban ${opts[40]}" "Done ${opts[41]}")
+"VLC ${opts[38]}" "UFW ${opts[39]}" "Fail2ban ${opts[40]}" "Google Authenticator ${opts[41]}" "Done ${opts[42]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -192,10 +192,14 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
                 choice 40
                 break
                 ;;
-            "Done ${opts[41]}")
+            "Google Authenticator ${opts[41]}")
+                choice 41
+                break
+                ;;
+            "Done ${opts[42]}")
                 break 2
                 ;;
-            *) printf '%s\n' 'Please Choose Between 1-41';;
+            *) printf '%s\n' 'Please Choose Between 1-42';;
         esac
     done
 done
@@ -2341,6 +2345,7 @@ else
     echo "Out of options please choose between 1-2"
 fi
 ;;
+
 39)
 #UFW
 printf "\nPlease Choose Your Desired UFW Version\n1-)UFW(From Official Package)\n2-)UFW (Via Snap)\
@@ -2351,14 +2356,16 @@ if [ "$ufw_version" = "1" ];then
     sudo dnf -vy install ufw
     sudo systemctl start ufw
     sudo systemctl enable ufw
-elif
+elif [ "$ufw_version" = "2" ];then
     sudo dnf -vy remove ufw
     sudo snap ufw
 else
     echo "Out of options please choose between 1-2"
 fi
 ;;
+
 40)
+#Fail2ban
 sudo dnf -vy install fail2ban
 sudo systemctl start fail2ban
 sudo systemctl enable fail2ban
@@ -2370,6 +2377,51 @@ logpath = /var/log/secure
 maxretry = 5
 bantime = 60" > /etc/fail2ban/jail.d/sshd.local
 sudo systemctl restart fail2ban
+;;
+
+41)
+#Google Authenticator
+printf "\nPlease Choose Your Desired Google Authenticator Version\n1-)Google Authenticator(From Official Package)\n\
+2-)Google Authenticator (Compile From Source)\n\
+3-)Google Authenticator (From .rpm file)\n\nPlease Select Your Google Authenticator Version:"
+read -r google_authenticator_version
+if [ "$google_authenticator_version" = "1" ];then
+    cd /root/Downloads/google-authenticator-libpam
+    make -j "$core" uninstall
+    sudo dnf -vy install google-authenticator qrencode qrencode-libs wget make gcc pam-devel
+    grep -qxF 'auth required pam_google_authenticator.so nullok' /etc/pam.d/sshd || \
+    echo 'auth required pam_google_authenticator.so nullok' >> /etc/pam.d/sshd
+    sed -ie 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
+    systemctl restart sshd
+elif [ "$google_authenticator_version" = "2" ];then
+    sudo mkdir -pv /root/Downloads/google-authenticator-libpam
+    sudo dnf -vy remove google-authenticator
+    sudo dnf -vy install wget make gcc pam-devel automake libtool gcc git
+    git clone https://github.com/google/google-authenticator-libpam.git /root/Downloads/google-authenticator-libpam
+    cd /root/Downloads/google-authenticator-libpam
+    chmod +x /root/Downloads/google-authenticator-libpam/bootstrap.sh
+    ./bootstrap.sh
+    ./configure
+    make -j "$core" && make -j "$core" install
+    grep -qxF 'auth required pam_google_authenticator.so nullok' /etc/pam.d/sshd || \
+    echo 'auth required pam_google_authenticator.so nullok' >> /etc/pam.d/sshd
+    sed -ie 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
+    systemctl restart sshd
+elif [ "$google_authenticator_version" = "3" ];then
+    sudo dnf -vy remove google-authenticator
+    sudo dnf -vy install rpm-build rpmdevtools rpmlint wget make gcc pam-devel automake libtool gcc git
+    rpmdev-setuptree
+    google_authenticator_latest=$(lynx -dump https://github.com/google/google-authenticator-libpam/tags \
+    | awk '/http/ {print $2}' | grep -i tar.gz | head -n 1)
+    sudo mkdir -pv /root/rpmbuild/SOURCES/google-authenticator
+    sudo wget -O /root/rpmbuild/SOURCES/google-authenticator-latest.tar.gz "$google_authenticator_latest"
+    tar -xvf /root/rpmbuild/SOURCES/google-authenticator-latest.tar.gz -C /root/rpmbuild/SOURCES/google-authenticator --strip-components 1
+    cd /root/rpmbuild/SOURCES/google-authenticator/contrib
+    ./build-rpm.sh stable
+    rpm -Uvh /root/rpmbuild/SOURCES/google-authenticator/contrib/_rpmbuild/RPMS/x86_64/google-authenticator-*
+else
+    echo "Out of options please choose between 1-3"
+fi
 ;;
         esac
     fi
