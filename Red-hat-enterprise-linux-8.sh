@@ -28,7 +28,8 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
 "MariaDB ${opts[24]}" "PostgreSQL ${opts[25]}" "Postman ${opts[26]}" "Docker ${opts[27]}"
 "Jenkins ${opts[28]}" "Nodejs & Npm ${opts[29]}" "Tinc ${opts[30]}" "Irssi ${opts[31]}" "OpenNebula ${opts[32]}"
 "Links ${opts[33]}" "MongoDB ${opts[34]}" "Ansible ${opts[35]}" "ClamAV ${opts[36]}" "Graylog ${opts[37]}"
-"VLC ${opts[38]}" "UFW ${opts[39]}" "Fail2ban ${opts[40]}" "Google Authenticator ${opts[41]}" "Done ${opts[42]}")
+"VLC ${opts[38]}" "UFW ${opts[39]}" "Fail2ban ${opts[40]}" "Google Authenticator ${opts[41]}" "Composer ${opts[42]}" 
+"Podman ${opts[43]}" "Done ${opts[44]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -196,10 +197,18 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
                 choice 41
                 break
                 ;;
-            "Done ${opts[42]}")
+            "Composer ${opts[42]}")
+                choice 42
+                break
+                ;;
+            "Podman ${opts[43]}")
+                choice 43
+                break
+                ;;
+            "Done ${opts[44]}")
                 break 2
                 ;;
-            *) printf '%s\n' 'Please Choose Between 1-42';;
+            *) printf '%s\n' 'Please Choose Between 1-44';;
         esac
     done
 done
@@ -480,7 +489,7 @@ elif [ "$apacheversion" = "3" ];then
     systemctl start httpd
 elif [ "$apacheversion" = "4" ];then
     sudo dnf -vy remove httpd
-    sudo dnf -vy install rpm-build rpmdevtools rpmlint
+    sudo dnf -vy install rpm-build rpmdevtools rpmlint openssl-devel
     rpmdev-setuptree
     sudo mkdir -pv /root/rpmbuild/SOURCES/httpd-2.4.52
     wget -O /root/rpmbuild/SOURCES/httpd-2.4.52.tar.bz2 https://dlcdn.apache.org//httpd/httpd-2.4.52.tar.bz2
@@ -729,7 +738,7 @@ printf "\nNginx Installation Has Finished\n\n"
 10)
 #Redis
 printf "\nPlease Choose Your Desired Redis Version\n\n1-)Redis (Official Package)\n2-)Redis (Snap)\n\
-3-)Redis (Compile From Source)\n\nPlease Select Your Redis Version:"
+3-)Redis (Compile From Source)\n4-)Redis (.rpm file)\n\nPlease Select Your Redis Version:"
 read -r redis_version
 if [ "$redis_version" = "1" ];then
     sudo snap remove redis
@@ -753,6 +762,110 @@ elif [ "$redis_version" = "3" ];then
     tar -xvf /root/Downloads/redis-stable.tar.gz -C /root/Downloads/redis-stable --strip-components 1
     cd /root/Downloads/redis-stable
     make -j "$core" && make -j "$core" install
+elif [ "$redis_version" = "4" ];then
+    redis_stable_link=$(lynx -dump https://download.redis.io/releases/ | awk '/http/ {print $2}' \
+    | grep -iv 'rc\|beta\|stable\|scripting' | tail -n 1)
+    redis_stable_version_number=$(lynx -dump https://download.redis.io/releases/ | awk '/http/ {print $2}' \
+    | grep -iv 'rc\|beta\|stable\|scripting' | tail -n 1 | grep -E -o "[0-9].{0,4}")
+    sudo dnf -vy install rpm-build rpmdevtools rpmlint logrotate chkconfig initscripts shadow-utils
+cat << 'EOF' > /root/rpmbuild/SPECS/redis.spec
+# Check for status of man pages
+# http://code.google.com/p/redis/issues/detail?id=202
+
+Name:             redis
+Version:          6.2.6
+Release:          1%{?dist}
+Summary:          A persistent key-value database
+
+Group:            Applications/Databases
+License:          BSD
+URL:              http://redis.io
+Source0:          http://redis.googlecode.com/files/%{name}-%{version}.tar.gz
+Source1:          %{name}.logrotate
+Source2:          %{name}.init
+# Update configuration
+#Patch0:           %{name}-%{version}-redis.conf.patch
+BuildRoot:        %{_tmppath}/%{name}-%{version}-root-%(%{__id_u} -n)
+
+ExcludeArch:      ppc ppc64
+
+Requires:         logrotate
+Requires(post):   chkconfig
+Requires(postun): initscripts
+Requires(pre):    shadow-utils
+Requires(preun):  chkconfig
+Requires(preun):  initscripts
+
+%description
+Redis is an advanced key-value store. It is similar to memcached but the data
+set is not volatile, and values can be strings, exactly like in memcached, but
+also lists, sets, and ordered sets. All this data types can be manipulated with
+atomic operations to push/pop elements, add/remove elements, perform server side
+union, intersection, difference between sets, and so forth. Redis supports
+different kind of sorting abilities.
+
+%prep
+%setup -q
+#%patch0 -p1
+
+%build
+make %{?_smp_mflags} \
+  DEBUG='' \
+  CFLAGS='%{optflags}' \
+  V=1 \
+  all
+
+%install
+rm -fr %{buildroot}
+make install PREFIX=%{buildroot}%{_prefix}
+# Install misc other
+install -p -D -m 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/logrotate.d/%{name}
+install -p -D -m 755 %{SOURCE2} %{buildroot}%{_initrddir}/%{name}
+install -p -D -m 644 %{name}.conf %{buildroot}%{_sysconfdir}/%{name}.conf
+install -d -m 755 %{buildroot}%{_localstatedir}/lib/%{name}
+install -d -m 755 %{buildroot}%{_localstatedir}/log/%{name}
+install -d -m 755 %{buildroot}%{_localstatedir}/run/%{name}
+
+# Fix non-standard-executable-perm error
+chmod 755 %{buildroot}%{_bindir}/%{name}-*
+
+# Ensure redis-server location doesn't change
+mkdir -p %{buildroot}%{_sbindir}
+mv %{buildroot}%{_bindir}/%{name}-server %{buildroot}%{_sbindir}/%{name}-server
+
+%clean
+rm -fr %{buildroot}
+
+%post
+/sbin/chkconfig --add redis
+
+%pre
+getent group redis &> /dev/null || groupadd -r redis &> /dev/null
+getent passwd redis &> /dev/null || \
+useradd -r -g redis -d %{_localstatedir}/lib/redis -s /sbin/nologin \
+-c 'Redis Server' redis &> /dev/null
+exit 0
+
+%preun
+if [ $1 = 0 ]; then
+  /sbin/service redis stop &> /dev/null
+  /sbin/chkconfig --del redis &> /dev/null
+fi
+
+%files
+%defattr(-,root,root,-)
+%doc 00-RELEASENOTES BUGS CONTRIBUTING COPYING README
+%config(noreplace) %{_sysconfdir}/logrotate.d/%{name}
+%config(noreplace) %{_sysconfdir}/%{name}.conf
+%dir %attr(0755, redis, root) %{_localstatedir}/lib/%{name}
+%dir %attr(0755, redis, root) %{_localstatedir}/log/%{name}
+%dir %attr(0755, redis, root) %{_localstatedir}/run/%{name}
+%{_bindir}/%{name}-*
+%{_sbindir}/%{name}-*
+%{_initrddir}/%{name}
+EOF
+    wget -O /root/rpmbuild/SOURCES/redis-6.2.6.tar.gz https://download.redis.io/releases/redis-6.2.6.tar.gz
+    rpmbuild -ba /root/rpmbuild/SPECS/redis.spec
 else
     echo "Out of options please choose between 1-3"
 fi
@@ -909,22 +1022,23 @@ elif [ "$opensshversion" = "3" ];then
     rpm-build rpmdevtools rpmlint gtk2-devel imake libXt-devel openssl-devel perl
     rpmdev-setuptree
     sudo dnf -vy group install 'Development Tools'
-    opensshlatest=$(lynx -dump https://www.openssh.com/releasenotes.html | awk '/http/{print $2}' \
-    | grep -i p1.tar.gz | head -n 1)
-    sudo mkdir -pv /root/rpmbuild/SOURCES/openssh-8.8p1
+    #opensshlatest=$(lynx -dump https://www.openssh.com/releasenotes.html | awk '/http/{print $2}' \
+    #| grep -i p1.tar.gz | head -n 1)
+    sudo mkdir -pv /root/rpmbuild/SOURCES/openssh-8.9p1
     sudo mkdir -pv /root/rpmbuild/SPECS
-    wget -O /root/rpmbuild/SOURCES/openssh-8.8p1.tar.gz "$opensshlatest"
+    wget -O /root/rpmbuild/SOURCES/openssh-8.9p1.tar.gz \
+    https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-8.9p1.tar.gz #"$opensshlatest"
     wget -O /root/rpmbuild/SOURCES/x11-ssh-askpass-1.2.4.1.tar.gz \
-    https://mirrors.slackware.com/slackware/slackware-14.2/source/xap/x11-ssh-askpass/x11-ssh-askpass-1.2.4.1.tar.gz
-    tar -xvf /root/rpmbuild/SOURCES/openssh-8.8p1.tar.gz -C /root/rpmbuild/SOURCES/openssh-8.8p1 --strip-components 1
-    sudo cp -v /root/rpmbuild/SOURCES/openssh-8.8p1/contrib/redhat/openssh.spec /root/rpmbuild/SPECS/openssh.spec
+    https://src.fedoraproject.org/repo/pkgs/openssh/x11-ssh-askpass-1.2.4.1.tar.gz/8f2e41f3f7eaa8543a2440454637f3c3/x11-ssh-askpass-1.2.4.1.tar.gz
+    tar -xvf /root/rpmbuild/SOURCES/openssh-8.9p1.tar.gz -C /root/rpmbuild/SOURCES/openssh-8.9p1 --strip-components 1
+    sudo cp -v /root/rpmbuild/SOURCES/openssh-8.9p1/contrib/redhat/openssh.spec /root/rpmbuild/SPECS/openssh.spec
     sed -i -e "s/BuildRequires: openssl-devel >= 1.0.1/#BuildRequires: openssl-devel >= 1.0.1/g" /root/rpmbuild/SPECS/openssh.spec
     sed -i -e "s/BuildRequires: openssl-devel < 1.1/#BuildRequires: openssl-devel < 1.1/g" /root/rpmbuild/SPECS/openssh.spec
     rpmbuild -ba /root/rpmbuild/SPECS/openssh.spec
     sudo dnf -vy remove openssh openssh-clients openssh-server
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/openssh-8.8p1-1.el8.x86_64.rpm
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/openssh-clients-8.8p1-1.el8.x86_64.rpm
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/openssh-server-8.8p1-1.el8.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/openssh-8.9p1-1.el8.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/openssh-clients-8.9p1-1.el8.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/openssh-server-8.9p1-1.el8.x86_64.rpm
     sudo dnf -vy install git
     sed -i -e "s/#PermitRootLogin prohibit-password/PermitRootLogin yes/g" /etc/ssh/sshd_config
     sed -i -e "s/#PasswordAuthentication yes/PasswordAuthentication yes/g" /etc/ssh/sshd_config
@@ -2391,6 +2505,7 @@ if [ "$google_authenticator_version" = "1" ];then
     sudo dnf -vy install google-authenticator qrencode qrencode-libs wget make gcc pam-devel
     grep -qxF 'auth required pam_google_authenticator.so nullok' /etc/pam.d/sshd || \
     echo 'auth required pam_google_authenticator.so nullok' >> /etc/pam.d/sshd
+    grep -qxF 'auth required pam_permit.so' /etc/pam.d/sshd || echo 'auth required pam_permit.so' >> /etc/pam.d/sshd
     sed -ie 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
     systemctl restart sshd
 elif [ "$google_authenticator_version" = "2" ];then
@@ -2405,6 +2520,7 @@ elif [ "$google_authenticator_version" = "2" ];then
     make -j "$core" && make -j "$core" install
     grep -qxF 'auth required pam_google_authenticator.so nullok' /etc/pam.d/sshd || \
     echo 'auth required pam_google_authenticator.so nullok' >> /etc/pam.d/sshd
+    grep -qxF 'auth required pam_permit.so' /etc/pam.d/sshd || echo 'auth required pam_permit.so' >> /etc/pam.d/sshd
     sed -ie 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
     systemctl restart sshd
 elif [ "$google_authenticator_version" = "3" ];then
@@ -2419,6 +2535,104 @@ elif [ "$google_authenticator_version" = "3" ];then
     cd /root/rpmbuild/SOURCES/google-authenticator/contrib
     ./build-rpm.sh stable
     rpm -Uvh /root/rpmbuild/SOURCES/google-authenticator/contrib/_rpmbuild/RPMS/x86_64/google-authenticator-*
+else
+    echo "Out of options please choose between 1-3"
+fi
+;;
+
+42)
+#Composer
+printf "\nPlease Choose Your Desired Composer\n1-)Composer(Composer programmatically)\n\
+2-)Composer (Command-Line Installation)\n3-)Composer (Stable Version)\n\
+4-)Composer (LTS Version)\n\nPlease Select Your Composer Version:"
+read -r composer_version
+if [ "$composer_version" = "1" ];then
+    EXPECTED_CHECKSUM="$(php -r 'copy("https://composer.github.io/installer.sig", "php://stdout");')"
+    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    ACTUAL_CHECKSUM="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
+
+    if [ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ];then
+        >&2 echo 'ERROR: Invalid installer checksum'
+        rm composer-setup.php
+        exit 1
+    fi
+    php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    RESULT=$?
+    rm composer-setup.php
+    exit $RESULT
+    #sudo mv composer.phar /usr/local/bin/composer
+elif [ "$composer_version" = "2" ];then
+    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    php -r "if (hash_file('sha384', 'composer-setup.php') === \
+    '906a84df04cea2aa72f40b5f787e49f22d4c2f19492ac310e8cba5b96ac8b64115ac402c8cd292b8a03482574915d1a8') \
+    { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+    php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    php -r "unlink('composer-setup.php');"
+    #sudo mv composer.phar /usr/local/bin/composer
+elif [ "$composer_version" = "3" ];then
+    latest_stable_composer=$(lynx -dump https://getcomposer.org/download/ | awk '/http/{print $2}' | grep -iv 'sha256\|asc' \
+    | grep -i stable | head -n 1)
+    sudo wget -O /root/Downloads/stable-composer.phar "$latest_stable_composer"
+    sudo mv -v /root/Downloads/stable-composer.phar /usr/local/bin/composer
+    sudo chmod +x /usr/local/bin/composer
+elif [ "$composer_version" = "4" ];then
+    latest_lts_composer=$(lynx -dump https://getcomposer.org/download/ | awk '/http/{print $2}' \
+    | grep -iv '.sha\|asc' | grep -i latest-2.2.x | head -n 1)
+    sudo wget -O /root/Downloads/lts-composer.phar "$latest_lts_composer"
+    sudo mv -v /root/Downloads/lts-composer.phar /usr/local/bin/composer
+    sudo chmod +x /usr/local/bin/composer
+else
+    echo "Out of options please choose between 1-4"
+fi
+;;
+43)
+#Podman
+printf "\nPlease Choose Your Desired Podman Version\n1-)Podman(From Official Package)\n\
+2-)Podman (Compile From Source)\n\
+3-)Podman (Via Nix)\n4-)Podman (Via Ansible)\n\nPlease Select Your Podman Version:"
+read -r podman_version
+if [ "$podman_version" = "1" ];then
+    sudo dnf -vy install @container-tools
+elif [ "$podman_version" = "2" ];then
+    #Install Necessary Packages
+    sudo dnf -vy install conmon containernetworking-plugins containers-common crun \
+    device-mapper-devel git glib2-devel glibc-devel glibc-static go golang-github-cpuguy83-md2man gpgme-devel \
+    iptables libassuan-devel libgpg-error-devel libseccomp-devel libselinux-devel make pkgconfig
+    #Install go
+    export GOPATH=root/Downloads/go
+    git clone https://go.googlesource.com/go $GOPATH
+    cd $GOPATH
+    cd src
+    ./all.bash
+    export PATH=$GOPATH/bin:$PATH
+    #Install Conmon
+    git clone https://github.com/containers/conmon
+    cd conmon
+    export GOCACHE="$(mktemp -d)"
+    make -j "$core"
+    sudo make -j "$core" podman
+    #Install Runc
+    git clone https://github.com/opencontainers/runc.git $GOPATH/src/github.com/opencontainers/runc
+    cd $GOPATH/src/github.com/opencontainers/runc
+    make -j "$core" BUILDTAGS="selinux seccomp"
+    sudo cp runc /usr/bin/runc
+    #Add configuration
+    sudo mkdir -p /etc/containers
+    sudo curl -L -o /etc/containers/registries.conf https://src.fedoraproject.org/rpms/containers-common/raw/main/f/registries.conf
+    sudo curl -L -o /etc/containers/policy.json https://src.fedoraproject.org/rpms/containers-common/raw/main/f/default-policy.json
+    #Install Podman
+    git clone https://github.com/containers/podman/
+    cd podman
+    make -j "$core" BUILDTAGS="selinux seccomp apparmor systemd"
+    sudo make -j "$core" install PREFIX=/usr
+elif [ "$podman_version" = "3" ];then
+    mkdir -p ~/.ansible/roles
+    cd ~/.ansible/roles
+    git clone https://github.com/alvistack/ansible-role-podman.git podman
+    cd ~/.ansible/roles/podman
+    pip3 install --upgrade --ignore-installed --requirement requirements.txt
+    molecule converge
+    molecule verify
 else
     echo "Out of options please choose between 1-3"
 fi
