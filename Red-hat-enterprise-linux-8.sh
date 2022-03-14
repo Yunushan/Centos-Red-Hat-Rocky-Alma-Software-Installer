@@ -29,7 +29,8 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
 "Jenkins ${opts[28]}" "Nodejs & Npm ${opts[29]}" "Tinc ${opts[30]}" "Irssi ${opts[31]}" "OpenNebula ${opts[32]}"
 "Links ${opts[33]}" "MongoDB ${opts[34]}" "Ansible ${opts[35]}" "ClamAV ${opts[36]}" "Graylog ${opts[37]}"
 "VLC ${opts[38]}" "UFW ${opts[39]}" "Fail2ban ${opts[40]}" "Google Authenticator ${opts[41]}" "Composer ${opts[42]}" 
-"Podman ${opts[43]}" "Done ${opts[44]}")
+"Podman ${opts[43]}" "NFS Server ${opts[44]}" "Elasticsearch ${opts[45]}" "Kibana ${opts[46]}"
+"pgAdmin ${opts[47]}" "pgAgent ${opts[48]}" "Zabbix Agent ${opts[49]}" "Done ${opts[50]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -205,10 +206,34 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
                 choice 43
                 break
                 ;;
-            "Done ${opts[44]}")
+            "NFS Server ${opts[44]}")
+                choice 44
+                break
+                ;;
+            "Elasticsearch ${opts[45]}")
+                choice 45
+                break
+                ;;
+            "Kibana ${opts[46]}")
+                choice 46
+                break
+                ;;
+            "pgAdmin ${opts[47]}")
+                choice 47
+                break
+                ;;
+            "pgAgent ${opts[48]}")
+                choice 48
+                break
+                ;;
+            "Zabbix Agent ${opts[49]}")
+                choice 49
+                break
+                ;;
+            "Done ${opts[50]}")
                 break 2
                 ;;
-            *) printf '%s\n' 'Please Choose Between 1-44';;
+            *) printf '%s\n' 'Please Choose Between 1-50';;
         esac
     done
 done
@@ -1760,7 +1785,7 @@ sudo dnf -vy install yum-utils
 sudo dnf -vy install https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm
 sudo yum-config-manager \
     --add-repo \
-    https://download.docker.com/linux/rhel/docker-ce.repo
+    https://download.docker.com/linux/centos/docker-ce.repo
 sudo dnf -vy install docker-ce --nobest docker-ce-cli containerd.io
 systemctl start docker
 systemctl enable docker
@@ -2399,7 +2424,7 @@ elif [ "$graylog_version" = "5" ];then
     sudo dnf -vy install https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm
     sudo yum-config-manager \
         --add-repo \
-        https://download.docker.com/linux/rhel/docker-ce.repo
+        https://download.docker.com/linux/centos/docker-ce.repo
     sudo dnf -vy install docker-ce --nobest docker-ce-cli containerd.io
     systemctl start docker
     systemctl enable docker
@@ -2633,6 +2658,175 @@ elif [ "$podman_version" = "3" ];then
     pip3 install --upgrade --ignore-installed --requirement requirements.txt
     molecule converge
     molecule verify
+else
+    echo "Out of options please choose between 1-3"
+fi
+;;
+
+44)
+#NFS Server
+sudo dnf -vy install nfs-utils portmap
+echo "/nfsshare <ip-address>(rw,sync,no_root_squash)" > /etc/exports
+sudo systemctl restart nfs-server
+;;
+
+45)
+#Elasticsearch
+printf "\nPlease Choose Your Desired Elasticsearch Version\n\n1-) Elasticsearch(From Official Package)\n\
+2-) Elasticsearch (Docker)\n\nPlease Select Your Elasticsearch Version:"
+read -r elasticsearch_version
+if [ "$elasticsearch_version" = "1" ];then
+    sudo dnf -vy install java-1.8.0-openjdk java-1.8.0-openjdk-devel
+    rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
+sudo tee /etc/yum.repos.d/elasticsearch.repo << EOT
+[elasticsearch]
+name=Elasticsearch repository for 8.x packages
+baseurl=https://artifacts.elastic.co/packages/8.x/yum
+gpgcheck=1
+gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+enabled=0
+autorefresh=1
+type=rpm-md
+EOT
+    sudo dnf -vy install --enablerepo=elasticsearch elasticsearch
+    sudo sed -i 's/xpack.security.enabled: true/xpack.security.enabled: false/g' /etc/elasticsearch/elasticsearch.yml
+    sudo systemctl daemon-reload
+    sudo systemctl enable elasticsearch
+    sudo systemctl restart elasticsearch
+elif [ "$elasticsearch_version" = "2" ];then
+    ## Install Docker##
+    sudo dnf -vy install yum-utils
+    sudo dnf -vy install https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm
+    sudo yum-config-manager \
+        --add-repo \
+        https://download.docker.com/linux/centos/docker-ce.repo
+    sudo dnf -vy install docker-ce --nobest docker-ce-cli containerd.io
+    systemctl start docker
+    systemctl enable docker
+    ## Install Docker##
+    docker pull docker.elastic.co/elasticsearch/elasticsearch:8.1.0
+    docker network create elastic
+    #docker run -d --name es01 --net elastic -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -it docker.elastic.co/elasticsearch/elasticsearch:8.1.0
+    #docker cp es01:/usr/share/elasticsearch/config/certs/http_ca.crt .
+    #curl --cacert http_ca.crt -u elastic https://localhost:9200
+    sudo mkdir -pv /root/Downloads/elasticsearch-docker
+    sudo touch /root/Downloads/elasticsearch-docker/docker-compose.yml
+    echo "version: '3'
+services:
+  elasticsearch:
+    image: elasticsearch:8.1.0
+    ports:
+      - 9200:9200
+    environment:
+      discovery.type: 'single-node'
+      xpack.security.enabled: 'false'" > /root/Downloads/elasticsearch-docker/docker-compose.yml
+    sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)"\
+    -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+    sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+    cd /root/Downloads/elasticsearch-docker
+    docker-compose up -d
+    sleep 10
+else
+    echo "Out of options please choose between 1-2"
+fi
+;;
+
+46)
+#Kibana
+printf "\nPlease Choose Your Desired Kibana Version\n\n1-) Kibana(From Official Package)\n\
+2-) Kibana (Docker)\n\nPlease Select Your Kibana Version:"
+read -r kibana_version
+if [ "$kibana_version" = "1" ];then
+    sudo dnf -vy install java-1.8.0-openjdk java-1.8.0-openjdk-devel
+    rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    sudo tee /etc/yum.repos.d/kibana.repo << EOT
+[kibana-8.x]
+name=Kibana repository for 8.x packages
+baseurl=https://artifacts.elastic.co/packages/8.x/yum
+gpgcheck=1
+gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+enabled=1
+autorefresh=1
+type=rpm-md
+EOT
+    sudo dnf -vy install kibana
+    sudo systemctl daemon-reload
+    sudo systemctl enable kibana
+    sudo systemctl start kibana
+elif [ "$kibana_version" = "2" ];then
+    ## Install Docker ##
+    sudo dnf -vy install yum-utils java-1.8.0-openjdk java-1.8.0-openjdk-devel
+    sudo dnf -vy install https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm
+    sudo yum-config-manager \
+        --add-repo \
+        https://download.docker.com/linux/centos/docker-ce.repo
+    sudo dnf -vy install docker-ce --nobest docker-ce-cli containerd.io
+    systemctl start docker
+    systemctl enable docker
+    ## Install Docker ##
+    docker network create elastic
+    docker pull docker.elastic.co/elasticsearch/elasticsearch:8.1.0
+    sudo mkdir -pv /root/Downloads/elasticsearch-docker
+    sudo touch /root/Downloads/elasticsearch-docker/docker-compose.yml
+    echo "version: '3'
+services:
+  elasticsearch:
+    image: elasticsearch:8.1.0
+    ports:
+      - 9200:9200
+    environment:
+      discovery.type: 'single-node'
+      xpack.security.enabled: 'false'" > /root/Downloads/elasticsearch-docker/docker-compose.yml
+    sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)"\
+    -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+    sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+    cd /root/Downloads/elasticsearch-docker
+    docker-compose up -d
+    sleep 15
+    docker pull docker.elastic.co/kibana/kibana:8.1.0
+    docker run -d --name kib-01 --net elastic -p 5601:5601 docker.elastic.co/kibana/kibana:8.1.0
+    sleep 15
+else
+    echo "Out of options please choose between 1-2"
+fi
+;;
+47)
+#pgAdmin
+sudo rpm -i https://ftp.postgresql.org/pub/pgadmin/pgadmin4/yum/pgadmin4-redhat-repo-2-1.noarch.rpm
+sudo dnf -vy install pgadmin4
+sudo /usr/pgadmin4/bin/setup-web.sh
+;;
+
+48)
+#pgAgent
+sudo dnf -vy install boost-system boost-filesystem boost-atomic boost-chrono boost-thread boost-date-time
+sudo rpm -Uvh https://download.postgresql.org/pub/repos/yum/14/redhat/rhel-8-x86_64/pgagent_14-4.2.1-1.rhel8.x86_64.rpm
+sudo systemctl enable pgagent_14.service
+sudo systemctl start pgagent_14.service
+;;
+
+49)
+#Zabbix Agent
+printf "\nPlease Choose Your Desired Zabbix Agent Version\n\n1-) Zabbix Agent (6.0 LTS)\n\
+2-) Zabbix Agent (5.0 LTS)\n3-) Zabbix Agent (4.0 LTS)\n\nPlease Select Your Zabbix Agent Version:"
+read -r zabbix_agent_version
+if [ "$elasticsearch_version" = "1" ];then
+    rpm -Uvh https://repo.zabbix.com/zabbix/6.0/rhel/8/x86_64/zabbix-release-6.0-1.el8.noarch.rpm
+    sudo dnf -vy install zabbix-agent
+    sudo systemctl enable zabbix-agent.service
+    sudo systemctl start zabbix-agent.service
+elif [ "$elasticsearch_version" = "2" ];then
+    rpm -Uvh https://repo.zabbix.com/zabbix/5.0/rhel/8/x86_64/zabbix-release-5.0-1.el8.noarch.rpm
+    sudo dnf -vy install zabbix-agent
+    sudo systemctl enable zabbix-agent.service
+    sudo systemctl start zabbix-agent.service
+elif [ "$elasticsearch_version" = "3" ];then
+    rpm -Uvh https://repo.zabbix.com/zabbix/4.0/rhel/8/x86_64/zabbix-release-4.0-2.el8.noarch.rpm
+    sudo dnf -vy install zabbix-agent
+    sudo systemctl enable zabbix-agent.service
+    sudo systemctl start zabbix-agent.service
 else
     echo "Out of options please choose between 1-3"
 fi
