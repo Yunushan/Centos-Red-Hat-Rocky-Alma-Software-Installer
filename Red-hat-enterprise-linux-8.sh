@@ -30,7 +30,8 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
 "Links ${opts[33]}" "MongoDB ${opts[34]}" "Ansible ${opts[35]}" "ClamAV ${opts[36]}" "Graylog ${opts[37]}"
 "VLC ${opts[38]}" "UFW ${opts[39]}" "Fail2ban ${opts[40]}" "Google Authenticator ${opts[41]}" "Composer ${opts[42]}" 
 "Podman ${opts[43]}" "NFS Server ${opts[44]}" "Elasticsearch ${opts[45]}" "Kibana ${opts[46]}"
-"pgAdmin ${opts[47]}" "pgAgent ${opts[48]}" "Zabbix Agent ${opts[49]}" "Done ${opts[50]}")
+"pgAdmin ${opts[47]}" "pgAgent ${opts[48]}" "Zabbix Agent ${opts[49]}" "Enterprise Search ${opts[50]}" 
+"Logstash ${opts[51]}" "Done ${opts[52]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -230,10 +231,18 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
                 choice 49
                 break
                 ;;
-            "Done ${opts[50]}")
+            "Enterprise Search ${opts[50]}")
+                choice 50
+                break
+                ;;
+            "Logstash ${opts[51]}")
+                choice 51
+                break
+                ;;
+            "Done ${opts[52]}")
                 break 2
                 ;;
-            *) printf '%s\n' 'Please Choose Between 1-50';;
+            *) printf '%s\n' 'Please Choose Between 1-52';;
         esac
     done
 done
@@ -273,7 +282,7 @@ sudo dnf -vy install yum-utils dnf-utils
 sudo dnf -vy install --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm \
 https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm
 sudo dnf -vy install wget curl mlocate nano lynx net-tools git iftop htop snapd bash-completion make cmake \
-bind-utils iotop powertop atop bzip2 bzip2-devel bzip2-libs redhat-lsb-core
+bind-utils iotop powertop atop bzip2 bzip2-devel bzip2-libs redhat-lsb-core mc
 sudo systemctl enable --now snapd.socket
 sudo ln -s /var/lib/snapd/snap /snap
 export PATH=$PATH:/snap/bin
@@ -499,36 +508,36 @@ systemctl start httpd
 elif [ "$apacheversion" = "3" ];then
     sudo dnf -vy remove httpd
     sudo mkdir -pv /root/Downloads/httpd
-    wget -O /root/Downloads/httpd/httpd-2.4.52.tar.bz2 https://dlcdn.apache.org//httpd/httpd-2.4.52.tar.bz2
+    wget -O /root/Downloads/httpd/httpd-2.4.53.tar.bz2 https://dlcdn.apache.org//httpd/httpd-2.4.53.tar.bz2
     sudo dnf -vy install autoconf libuuid-devel lua-devel \
     libxml2-devel python2 python39 python39-devel doxygen apr apr-util apr-util-devel \
     perl make cmake gcc rpm-build rpmdevtools rpmlint pcre-devel libselinux-devel
     rpmdev-setuptree
     cd /root/Downloads/httpd
-    rpmbuild -tb httpd-2.4.52.tar.bz2
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-2.4.52-1.x86_64.rpm
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/mod_ssl-2.4.52-1.x86_64.rpm
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-devel-2.4.52-1.x86_64.rpm
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-tools-2.4.52-1.x86_64.rpm
+    rpmbuild -tb httpd-2.4.53.tar.bz2
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-2.4.53-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/mod_ssl-2.4.53-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-devel-2.4.53-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-tools-2.4.53-1.x86_64.rpm
     systemctl enable httpd
     systemctl start httpd
 elif [ "$apacheversion" = "4" ];then
     sudo dnf -vy remove httpd
     sudo dnf -vy install rpm-build rpmdevtools rpmlint openssl-devel
     rpmdev-setuptree
-    sudo mkdir -pv /root/rpmbuild/SOURCES/httpd-2.4.52
-    wget -O /root/rpmbuild/SOURCES/httpd-2.4.52.tar.bz2 https://dlcdn.apache.org//httpd/httpd-2.4.52.tar.bz2
-    tar -xvf /root/rpmbuild/SOURCES/httpd-2.4.52.tar.bz2 -C /root/rpmbuild/SOURCES/httpd-2.4.52 --strip-components 1
+    sudo mkdir -pv /root/rpmbuild/SOURCES/httpd-2.4.53
+    wget -O /root/rpmbuild/SOURCES/httpd-2.4.53.tar.bz2 https://dlcdn.apache.org//httpd/httpd-2.4.53.tar.bz2
+    tar -xvf /root/rpmbuild/SOURCES/httpd-2.4.53.tar.bz2 -C /root/rpmbuild/SOURCES/httpd-2.4.53 --strip-components 1
     sudo dnf -vy install autoconf libuuid-devel lua-devel \
     libxml2-devel python2 python39 python39-devel doxygen apr apr-util apr-util-devel \
     perl make cmake gcc rpm-build pcre-devel libselinux-devel
-    sudo cp -v /root/rpmbuild/SOURCES/httpd-2.4.52/httpd.spec /root/rpmbuild/SPECS/
+    sudo cp -v /root/rpmbuild/SOURCES/httpd-2.4.53/httpd.spec /root/rpmbuild/SPECS/
     sudo sed -i '/--enable-case-filter/a \ \ \ \ \ \ \ \ --prefix=/etc/httpd \\' /root/rpmbuild/SPECS/httpd.spec
     rpmbuild -ba /root/rpmbuild/SPECS/httpd.spec
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-2.4.52-1.x86_64.rpm
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/mod_ssl-2.4.52-1.x86_64.rpm
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-devel-2.4.52-1.x86_64.rpm
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-tools-2.4.52-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-2.4.53-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/mod_ssl-2.4.53-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-devel-2.4.53-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-tools-2.4.53-1.x86_64.rpm
     systemctl enable httpd
     systemctl start httpd
 else
@@ -605,7 +614,7 @@ fi
 #OpenSSL Installation Section
 printf "\nPlease Choose Your Desired OpenSSL Version\n\n1-)OpenSSL 1.1.1k (Official Package)\n2-)OpenSSL 3.0\n\
 3-)OpenSSL 3 Latest(Compile From Source)\n4-)OpenSSL 1 Latest (Compile From Source)\n\
-5-)OpenSSL 1.1.1m (Create & Install .rpm file From .spec)\n\nPlease Select Your OpenSSL Version:"
+5-)OpenSSL 1.1.1n (Create & Install .rpm file From .spec)\n\nPlease Select Your OpenSSL Version:"
 read -r opensslversion
 if [ "$opensslversion" = "1" ];then
     sudo dnf -vy install openssl-devel
@@ -650,11 +659,11 @@ elif [ "$opensslversion" = "5" ];then
     sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build rpmdevtools rpmlint
     rpmdev-setuptree
     sudo dnf -vy remove openssl openssl-devel
-    wget -O /root/rpmbuild/SOURCES/openssl-1.1.1m.tar.gz https://www.openssl.org/source/openssl-1.1.1m.tar.gz
+    wget -O /root/rpmbuild/SOURCES/openssl-1.1.1n.tar.gz https://www.openssl.org/source/openssl-1.1.1n.tar.gz
 cat << 'EOF' > /root/rpmbuild/SPECS/openssl.spec
-Summary: OpenSSL 1.1.1m for RedHat
+Summary: OpenSSL 1.1.1n for RedHat
 Name: openssl
-Version: %{?version}%{!?version:1.1.1m}
+Version: %{?version}%{!?version:1.1.1n}
 Release: 1%{?dist}
 Obsoletes: %{name} <= %{version}
 Provides: %{name} = %{version}
@@ -666,13 +675,13 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 %global openssldir /usr/openssl
 %description
 https://github.com/philyuchkoff/openssl-RPM-Builder
-OpenSSL RPM for version 1.1.1m on RedHat
+OpenSSL RPM for version 1.1.1n on RedHat
 %package devel
 Summary: Development files for programs which will use the openssl library
 Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
 %description devel
-OpenSSL RPM for version 1.1.1m on RedHat (development package)
+OpenSSL RPM for version 1.1.1n on RedHat (development package)
 %prep
 %setup -q
 %build
@@ -704,16 +713,17 @@ EOF
         rpmbuild \
         -D 'debug_package %{nil}' \
         -ba openssl.spec
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-1.1.1m-1.el8.x86_64.rpm --nodeps --force
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-1.1.1m-1.el8.x86_64.rpm
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-1.1.1n-1.el8.x86_64.rpm --nodeps --force
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-1.1.1n-1.el8.x86_64.rpm
 else
     echo "Out of options please choose between 1-5"
 fi
 printf "\nOpenSSL Installation Has Finished \n\n"
 #----------------------------------------------------------------------------------------
 #Nginx installation section
-printf "\nPlease Choose Your Desired Nginx Version\n\n1-)Nginx (Official Package)\n\
-2-)Nginx Latest(Compile From Source)\n\nPlease Select Your Nginx Version:"
+printf "\nPlease Choose Your Desired Nginx Version\n\n1-) Nginx (Official Package)\n\
+2-) Nginx Latest(Compile From Source)\n3-) Nginx (Compile .src.rpm File)\n4-) Nginx (From .rpm file)\n\
+5-) Nginx (From nginx.repo Stable)\n6-) Nginx (From nginx.repo Mainline)\nPlease Select Your Nginx Version:"
 read -r nginxversion
 if [ "$nginxversion" = "1" ];then
     sudo dnf -vy install nginx
@@ -748,8 +758,66 @@ PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target" > /lib/systemd/system/nginx.service
+elif [ "$nginxversion" = "3" ];then
+    sudo dnf -vy install yum-utils rpmdevtools rpm-build rpmdevtools rpmlint spectool
+    sudo dnf -vy groupinstall "Development Tools"
+    rpmdev-setuptree
+    nginx_latest_source_rpm=$(lynx -dump http://nginx.org/packages/rhel/8/SRPMS/ | awk '/http/ {print $2}' \
+    | grep -iv 'perl\|njs\|xslt\|image-filter\|repodata' | grep -i el8.ngx.src.rpm | tail -n 1)
+    sudo mkdir -pv /root/Downloads
+    wget -O /root/Downloads/nginx-latest.ngx.src.rpm "$nginx_latest_source_rpm"
+    sudo rpm -Uvh /root/Downloads/nginx-latest.ngx.src.rpm
+    sudo yum-builddep -vy /root/Downloads/nginx-latest.ngx.src.rpm
+    sudo rpmbuild -v --rebuild /root/Downloads/nginx-latest.ngx.src.rpm
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/nginx-*
+elif [ "$nginxversion" = "4" ];then
+    nginx_latest_rpm=$(lynx -dump http://nginx.org/packages/rhel/8/x86_64/RPMS/ | awk '/http/ {print $2}' \
+    | grep -iv 'perl\|njs\|xslt\|image-filter\|repodata\|debuginfo' | grep -i .el8.ngx.x86_64.rpm | tail -n 1)
+    sudo mkdir -pv /root/Downloads
+    wget -O /root/Downloads/nginx-latest.rpm "$nginx_latest_rpm"
+    sudo rpm -Uvh /root/Downloads/nginx-latest.rpm
+elif [ "$nginxversion" = "5" ];then
+    sudo dnf -vy install yum-utils
+    echo "[nginx-stable]
+name=nginx stable repo
+baseurl=http://nginx.org/packages/centos/8/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://nginx.org/keys/nginx_signing.key
+module_hotfixes=true
+
+[nginx-mainline]
+name=nginx mainline repo
+baseurl=http://nginx.org/packages/mainline/centos/8/x86_64/
+gpgcheck=1
+enabled=0
+gpgkey=https://nginx.org/keys/nginx_signing.key
+module_hotfixes=true" > /etc/yum.repos.d/nginx.repo
+    sudo yum-config-manager -v --disable nginx-mainline
+    sudo yum-config-manager -v --enable nginx-stable
+    sudo dnf -vy install nginx
+elif [ "$nginxversion" = "6" ];then
+    sudo dnf -vy install yum-utils
+    echo "[nginx-stable]
+name=nginx stable repo
+baseurl=http://nginx.org/packages/centos/8/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://nginx.org/keys/nginx_signing.key
+module_hotfixes=true
+
+[nginx-mainline]
+name=nginx mainline repo
+baseurl=http://nginx.org/packages/mainline/centos/8/x86_64/
+gpgcheck=1
+enabled=0
+gpgkey=https://nginx.org/keys/nginx_signing.key
+module_hotfixes=true" > /etc/yum.repos.d/nginx.repo
+    sudo yum-config-manager -v --enable nginx-stable
+    sudo yum-config-manager -v --enable nginx-mainline
+    sudo dnf -vy install nginx
 else
-    echo "Out of options please choose between 1-2"
+    echo "Out of options please choose between 1-6"
 fi
 #------------------------------------------------------------
 sudo systemctl enable nginx
@@ -901,7 +969,7 @@ fi
 #OpenSSL Installation Section
 printf "\nPlease Choose Your Desired OpenSSL Version\n\n1-)OpenSSL 1.1.1k (Official Package)\n2-)OpenSSL 3.0\n\
 3-)OpenSSL 3 Latest(Compile From Source)\n4-)OpenSSL 1 Latest (Compile From Source)\n\
-5-)OpenSSL 1.1.1m (Create & Install .rpm file From .spec)\n\nPlease Select Your OpenSSL Version:"
+5-)OpenSSL 1.1.1n (Create & Install .rpm file From .spec)\n\nPlease Select Your OpenSSL Version:"
 read -r opensslversion
 if [ "$opensslversion" = "1" ];then
     sudo dnf -vy install openssl-devel
@@ -946,11 +1014,11 @@ elif [ "$opensslversion" = "5" ];then
     sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build rpmdevtools rpmlint
     rpmdev-setuptree
     sudo dnf -vy remove openssl openssl-devel
-    wget -O /root/rpmbuild/SOURCES/openssl-1.1.1m.tar.gz https://www.openssl.org/source/openssl-1.1.1m.tar.gz
+    wget -O /root/rpmbuild/SOURCES/openssl-1.1.1n.tar.gz https://www.openssl.org/source/openssl-1.1.1n.tar.gz
 cat << 'EOF' > /root/rpmbuild/SPECS/openssl.spec
-Summary: OpenSSL 1.1.1m for RedHat
+Summary: OpenSSL 1.1.1n for RedHat
 Name: openssl
-Version: %{?version}%{!?version:1.1.1m}
+Version: %{?version}%{!?version:1.1.1n}
 Release: 1%{?dist}
 Obsoletes: %{name} <= %{version}
 Provides: %{name} = %{version}
@@ -962,13 +1030,13 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 %global openssldir /usr/openssl
 %description
 https://github.com/philyuchkoff/openssl-RPM-Builder
-OpenSSL RPM for version 1.1.1m on RedHat
+OpenSSL RPM for version 1.1.1n on RedHat
 %package devel
 Summary: Development files for programs which will use the openssl library
 Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
 %description devel
-OpenSSL RPM for version 1.1.1m on RedHat (development package)
+OpenSSL RPM for version 1.1.1n on RedHat (development package)
 %prep
 %setup -q
 %build
@@ -1000,8 +1068,8 @@ EOF
         rpmbuild \
         -D 'debug_package %{nil}' \
         -ba openssl.spec
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-1.1.1m-1.el8.x86_64.rpm --nodeps --force
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-1.1.1m-1.el8.x86_64.rpm
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-1.1.1n-1.el8.x86_64.rpm --nodeps --force
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-1.1.1n-1.el8.x86_64.rpm
 else
     echo "Out of options please choose between 1-5"
 fi
@@ -1018,7 +1086,7 @@ if [ "$opensshversion" = "1" ];then
     make -j "$core" uninstall
     sudo dnf -vy install openssh openssh-clients openssh-server 
 elif [ "$opensshversion" = "2" ];then
-    #sudo dnf -vy remove openssh*
+    #sudo dnf -vy remove openssh openssh-clients openssh-server
     sudo dnf -vy install gcc zlib zlib-devel compat-openssl10 openssl openssl-devel zlib-devel openssl-devel pam-devel \
     libselinux-devel audit-libs-devel autoconf automake gcc libX11-devel libselinux-devel make ncurses-devel \
     openssl-devel p11-kit-devel perl-generators systemd-devel xauth pam-devel rpm-build zlib-devel
@@ -1039,6 +1107,9 @@ elif [ "$opensshversion" = "2" ];then
                 --with-privsep-path=/opt/lib/sshd/ \
                 --sysconfdir=/opt/ssh
     make -j "$core" && make -j "$core" install
+    sed -i -e "s/#PermitRootLogin prohibit-password/PermitRootLogin yes/g" /etc/ssh/sshd_config
+    sed -i -e "s/#PasswordAuthentication yes/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+    sed -i -e "s/#UsePAM no/UsePAM yes/g" /etc/ssh/sshd_config
     systemctl restart sshd
 elif [ "$opensshversion" = "3" ];then
     sudo dnf -vy install gcc zlib zlib-devel compat-openssl10 openssl openssl-devel zlib-devel openssl-devel pam-devel \
@@ -1141,19 +1212,19 @@ printf "\nPlease Choose Your Desired OpenJDK Version\n\n1-)OpenJDK 8 \n2-)OpenJD
 3-)OpenJDK 17\n\nPlease Select Your OpenJDK Version:"
 read -r openjdkversion
 if [ "$openjdkversion" = "1" ];then
-    sudo yum remove java-11-openjdk-devel -y
-    sudo yum remove java-17-openjdk-devel -y
-    sudo yum install java-1.8.0-openjdk-devel -y
+    sudo dnf -vy remove java-11-openjdk-devel
+    sudo dnf -vy remove java-17-openjdk-devel
+    sudo dnf -vy install java-1.8.0-openjdk-devel
     printf "\nOpenJDK 8 JDK Installation Has Finished \n\n"
 elif [ "$openjdkversion" = "2" ];then
-    sudo yum remove java-17-openjdk-devel -y
-    sudo yum remove  java-1.8.0-openjdk-devel -y
-    sudo yum install java-11-openjdk-devel -y
+    sudo dnf -vy remove java-17-openjdk-devel
+    sudo dnf -vy remove  java-1.8.0-openjdk-devel
+    sudo dnf -vy install java-11-openjdk-devel
     printf "\nOpenJDK 11 JDK Installation Has Finished \n\n"
 elif [ "$openjdkversion" = "3" ];then
-    sudo yum remove  java-1.8.0-openjdk-devel -y
-    sudo yum remove java-11-openjdk-devel -y
-    sudo yum install java-17-openjdk-devel -y
+    sudo dnf -vy remove  java-1.8.0-openjdk-devel
+    sudo dnf -vy remove java-11-openjdk-devel
+    sudo dnf -vy install java-17-openjdk-devel
     printf "\nOpenJDK 17 JDK Installation Has Finished \n\n"
 else
     echo "Out of options please choose between 1-3"
@@ -1195,7 +1266,7 @@ grub2-set-default 0
 grub2-mkconfig -o /etc/grub2.cfg
 grub2-mkconfig -o /boot/efi/EFI/redhat/grub.cfg
 #grubby --set-default /boot/vmlinuz-5.16.2-1.el8.elrepo.x86_64
-#sudo yum update kernel -y # To Update Linux Kernel
+#sudo dnf -vy update kernel # To Update Linux Kernel
 printf "\nLinux Kernel Installation Has Finished To Apply New Kernel Please Reboot The Server.\n\n"
 ;;
 
@@ -1451,8 +1522,8 @@ if [ "$zabbix_option" = "1" ];then
     printf "Please Enter Desired Mysql Password:"
     read -r mysqlpassword
     sudo rpm -Uvh https://repo.zabbix.com/zabbix/4.0/rhel/8/x86_64/zabbix-release-4.0-2.el8.noarch.rpm
-    sudo yum clean all
-    sudo yum -y install zabbix-server-mysql zabbix-web-mysql zabbix-agent mysql mysql-devel mysql-server httpd httpd-devel
+    sudo dnf clean all
+    sudo dnf -vy install zabbix-server-mysql zabbix-web-mysql zabbix-agent mysql mysql-devel mysql-server httpd httpd-devel
     sudo systemctl start mysqld
     sudo systemctl enable mysqld
     sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '$mysqlpassword';"
@@ -1470,8 +1541,8 @@ elif [ "$zabbix_option" = "2" ];then
     read -r pgpassword
     sudo rpm -Uvh https://repo.zabbix.com/zabbix/4.0/rhel/8/x86_64/zabbix-release-4.0-2.el8.noarch.rpm
     dnf clean all
-    sudo yum -y install postgresql postgresql-server postgresql-contrib
-    sudo dnf -y install zabbix-server-pgsql zabbix-web-pgsql zabbix-agent httpd httpd-devel
+    sudo dnf -vy install postgresql postgresql-server postgresql-contrib
+    sudo dnf -vy install zabbix-server-pgsql zabbix-web-pgsql zabbix-agent httpd httpd-devel
     sudo postgresql-setup --initdb
     sudo systemctl start postgresql
     sudo systemctl enable postgresql
@@ -1818,7 +1889,7 @@ if [ "$nodejsversion" = "1" ];then
     sudo dnf -vy install nodejs
     node --version
 elif [ "$nodejsversion" = "2" ];then
-    sudo yum remove nodejs -y
+    sudo dnf -vy remove nodejs
     sudo dnf -vy module disable nodejs:10
     sudo dnf -vy module disable nodejs:14
     sudo dnf -vy module disable nodejs:16
@@ -1854,13 +1925,13 @@ read -r tincversion
 if [ "$tincversion" = "1" ];then
     cd /root/Downloads/tinc-latest && make -j "$core" uninstall
     cd /root/Downloads/tinc-latest-pre && make -j "$core" uninstall
-    sudo yum -y remove tinc
-    sudo yum -y install tinc
+    sudo dnf -vy remove tinc
+    sudo dnf -vy install tinc
 elif [ "$tincversion" = "2" ];then
     cd /root/Downloads/tinc-latest && make -j "$core" uninstall
     cd /root/Downloads/tinc-latest-pre && make -j "$core" uninstall
-    sudo yum -y remove tinc
-    sudo yum -y install zlib zlib-devel lzo lzo-devel openssl openssl-devel
+    sudo dnf -vy remove tinc
+    sudo dnf -vy install zlib zlib-devel lzo lzo-devel openssl openssl-devel
     tinclatest=$(lynx -dump https://www.tinc-vpn.org/download/ | awk '/http/{print $2}' | grep -iv '.sig\|pre' \
     | grep -i .tar.gz | head -n 1)
     wget -O /root/Downloads/tinc-latest.tar.gz "$tinclatest"
@@ -1873,7 +1944,7 @@ elif [ "$tincversion" = "2" ];then
 elif [ "$tincversion" = "3" ];then
     cd /root/Downloads/tinc-latest && make -j "$core" uninstall
     cd /root/Downloads/tinc-latest-pre && make -j "$core" uninstall
-    sudo yum -y remove tinc
+    sudo dnf -vy remove tinc
     tinclatestpre=$(lynx -dump https://www.tinc-vpn.org/download/ | awk '/http/{print $2}' | grep -i 'pre' \
     | grep -i .tar.gz | grep -iv .sig | head -n 1)
     wget -O /root/Downloads/tinc-latest-pre.tar.gz "$tinclatestpre"
@@ -1886,7 +1957,7 @@ elif [ "$tincversion" = "3" ];then
 elif [ "$tincversion" = "4" ];then
     cd /root/Downloads/tinc-latest && make -j "$core" uninstall
     cd /root/Downloads/tinc-latest-pre && make -j "$core" uninstall
-    sudo yum -y remove tinc
+    sudo dnf -vy remove tinc
     sudo snap install tinc-vpn
     tinc-vpn.tincd --version
 else
@@ -2343,19 +2414,19 @@ read -r graylog_password
     3-)OpenJDK 17\n\nPlease Select Your OpenJDK Version:"
     read -r openjdkversion
     if [ "$openjdkversion" = "1" ];then
-        sudo yum remove java-11-openjdk-devel -y
-        sudo yum remove java-17-openjdk-devel -y
-        sudo yum install java-1.8.0-openjdk-devel -y
+        sudo dnf -vy remove java-11-openjdk-devel
+        sudo dnf -vy remove java-17-openjdk-devel
+        sudo dnf -vy install java-1.8.0-openjdk-devel
         printf "\nOpenJDK 8 JDK Installation Has Finished \n\n"
     elif [ "$openjdkversion" = "2" ];then
-        sudo yum remove java-17-openjdk-devel -y
-        sudo yum remove  java-1.8.0-openjdk-devel -y
-        sudo yum install java-11-openjdk-devel -y
+        sudo dnf -vy remove java-17-openjdk-devel
+        sudo dnf -vy remove  java-1.8.0-openjdk-devel
+        sudo dnf -vy install java-11-openjdk-devel
         printf "\nOpenJDK 11 JDK Installation Has Finished \n\n"
     elif [ "$openjdkversion" = "3" ];then
-        sudo yum remove  java-1.8.0-openjdk-devel -y
-        sudo yum remove java-11-openjdk-devel -y
-        sudo yum install java-17-openjdk-devel -y
+        sudo dnf -vy remove  java-1.8.0-openjdk-devel
+        sudo dnf -vy remove java-11-openjdk-devel
+        sudo dnf -vy install java-17-openjdk-devel
         printf "\nOpenJDK 17 JDK Installation Has Finished \n\n"
     else
         echo "Out of options please choose between 1-3"
@@ -2446,19 +2517,19 @@ elif [ "$graylog_version" = "7" ];then
     3-)OpenJDK 17\n\nPlease Select Your OpenJDK Version:"
     read -r openjdkversion
     if [ "$openjdkversion" = "1" ];then
-        sudo yum remove java-11-openjdk-devel -y
-        sudo yum remove java-17-openjdk-devel -y
-        sudo yum install java-1.8.0-openjdk-devel -y
+        sudo dnf -vy remove java-11-openjdk-devel
+        sudo dnf -vy remove java-17-openjdk-devel
+        sudo dnf -vy install java-1.8.0-openjdk-devel
         printf "\nOpenJDK 8 JDK Installation Has Finished \n\n"
     elif [ "$openjdkversion" = "2" ];then
-        sudo yum remove java-17-openjdk-devel -y
-        sudo yum remove  java-1.8.0-openjdk-devel -y
-        sudo yum install java-11-openjdk-devel -y
+        sudo dnf -vy remove java-17-openjdk-devel
+        sudo dnf -vy remove java-1.8.0-openjdk-devel
+        sudo dnf -vy install java-11-openjdk-devel
         printf "\nOpenJDK 11 JDK Installation Has Finished \n\n"
     elif [ "$openjdkversion" = "3" ];then
-        sudo yum remove  java-1.8.0-openjdk-devel -y
-        sudo yum remove java-11-openjdk-devel -y
-        sudo yum install java-17-openjdk-devel -y
+        sudo dnf -vy remove java-1.8.0-openjdk-devel
+        sudo dnf -vy remove java-11-openjdk-devel
+        sudo dnf -vy install java-17-openjdk-devel
         printf "\nOpenJDK 17 JDK Installation Has Finished \n\n"
     else
         echo "Out of options please choose between 1-3"
@@ -2676,7 +2747,8 @@ printf "\nPlease Choose Your Desired Elasticsearch Version\n\n1-) Elasticsearch(
 2-) Elasticsearch (Docker)\n\nPlease Select Your Elasticsearch Version:"
 read -r elasticsearch_version
 if [ "$elasticsearch_version" = "1" ];then
-    sudo dnf -vy install java-1.8.0-openjdk java-1.8.0-openjdk-devel
+    sudo dnf -vy rmeove java*
+    sudo dnf -vy install java-11-openjdk-devel
     rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
 sudo tee /etc/yum.repos.d/elasticsearch.repo << EOT
 [elasticsearch]
@@ -2695,6 +2767,8 @@ EOT
     sudo systemctl restart elasticsearch
 elif [ "$elasticsearch_version" = "2" ];then
     ## Install Docker##
+    sudo dnf -vy rmeove java*
+    sudo dnf -vy install java-11-openjdk-devel
     sudo dnf -vy install yum-utils
     sudo dnf -vy install https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm
     sudo yum-config-manager \
@@ -2738,7 +2812,8 @@ printf "\nPlease Choose Your Desired Kibana Version\n\n1-) Kibana(From Official 
 2-) Kibana (Docker)\n\nPlease Select Your Kibana Version:"
 read -r kibana_version
 if [ "$kibana_version" = "1" ];then
-    sudo dnf -vy install java-1.8.0-openjdk java-1.8.0-openjdk-devel
+    sudo dnf -vy rmeove java*
+    sudo dnf -vy install java-11-openjdk-devel
     rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
     sudo tee /etc/yum.repos.d/kibana.repo << EOT
 [kibana-8.x]
@@ -2827,6 +2902,99 @@ elif [ "$elasticsearch_version" = "3" ];then
     sudo dnf -vy install zabbix-agent
     sudo systemctl enable zabbix-agent.service
     sudo systemctl start zabbix-agent.service
+else
+    echo "Out of options please choose between 1-3"
+fi
+;;
+
+50)
+#Enterprise Search
+printf "\nPlease Choose Your Desired Enterprise Search Version\n\n1-) Enterprise Search 8.1.0 (From .rpm file)\n\
+2-) Enterprise Search Latest (Via Docker)\n\nPlease Select Your Enterprise Search Version:"
+read -r enterprise_search_version
+if [ "$elasticsearch_version" = "1" ];then
+    sudo dnf -vy rmeove java*
+    sudo dnf -vy install java-11-openjdk-devel
+    wget -O /root/Downloads/enterprise-search-8.1.0.rpm  \
+    https://artifacts.elastic.co/downloads/enterprise-search/enterprise-search-8.1.0.rpm
+    sudo rpm -Uvh /root/Downloads/enterprise-search-8.1.0.rpm
+elif [ "$elasticsearch_version" = "2" ];then
+    sudo dnf -vy rmeove java*
+    sudo dnf -vy install java-11-openjdk-devel
+    sudo dnf -vy install yum-utils
+    sudo dnf -vy install https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm
+    sudo yum-config-manager \
+        --add-repo \
+        https://download.docker.com/linux/centos/docker-ce.repo
+    sudo dnf -vy install docker-ce --nobest docker-ce-cli containerd.io
+    systemctl start docker
+    systemctl enable docker
+    docker pull docker.elastic.co/enterprise-search/enterprise-search:8.1.0
+elif [ "$elasticsearch_version" = "3" ];then
+    sudo dnf -vy remove java*
+    sudo dnf -vy install java-11-openjdk-devel
+    sudo mkdir -pv /root/Downloads/enterprise-search-8.1.0
+    wget -O /root/Downloads/enterprise-search-8.1.0.tar.gz \
+    https://artifacts.elastic.co/downloads/enterprise-search/enterprise-search-8.1.0.tar.gz
+    tar -xvf /root/Downloads/enterprise-search-8.1.0.tar.gz -C /root/Downloads/enterprise-search-8.1.0 --strip-components 1
+    cd /root/Downloads/enterprise-search-8.1.0/bin/
+    ./enterprise-search
+else
+    echo "Out of options please choose between 1-3"
+fi
+;;
+
+50)
+#Logstash
+printf "\nPlease Choose Your Desired Logstash Version\n\n1-) Logstash (From Official Package)\n\
+2-) Logstash (Via Docker)\n3-) Logstash (From .rpm file)\nPlease Select Your Enterprise Search Version:"
+read -r logstash_version
+if [ "$logstash_version" = "1" ];then
+    sudo dnf -vy rmeove java*
+    sudo dnf -vy install java-11-openjdk-devel
+    sudo rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    echo "[logstash-8.x]
+name=Elastic repository for 8.x packages
+baseurl=https://artifacts.elastic.co/packages/8.x/yum
+gpgcheck=1
+gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+enabled=1
+autorefresh=1
+type=rpm-md" > /etc/yum.repos.d/logstash.repo
+    sudo dnf -vy install logstash
+    sudo systemctl daemon-reload
+    sudo systemctl start logstash
+    sudo systemctl enable logstash
+elif [ "$logstash_version" = "2" ];then
+    sudo dnf -vy rmeove java*
+    sudo dnf -vy install java-11-openjdk-devel
+    sudo dnf -vy install yum-utils
+    sudo dnf -vy install https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm
+    sudo yum-config-manager \
+        --add-repo \
+        https://download.docker.com/linux/centos/docker-ce.repo
+    sudo dnf -vy install docker-ce --nobest docker-ce-cli containerd.io
+    systemctl start docker
+    systemctl enable docker
+    docker pull docker.elastic.co/logstash/logstash:8.1.0
+    sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)"\
+    -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+    sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+elif [ "$logstash_version" = "3" ];then
+    sudo dnf -vy rmeove java*
+    sudo dnf -vy install java-11-openjdk-devel
+    sudo rpm -Uvh https://artifacts.elastic.co/downloads/logstash/logstash-8.1.0-x86_64.rpm
+    sudo systemctl restart logstash
+    sudo systemctl enable logtash
+elif [ "$logstash_version" = "4" ];then
+    sudo mkdir -pv /root/Downloads/logstash
+    sudo dnf -vy rmeove java*
+    sudo dnf -vy install java-11-openjdk-devel
+    wget -O /root/Downloads/logstash-8.1.0-linux-x86_64.tar.gz \
+    https://artifacts.elastic.co/downloads/logstash/logstash-8.1.0-linux-x86_64.tar.gz
+    tar -xvf /root/Downloads/logstash-8.1.0-linux-x86_64.tar.gz -C /root/Downloads/logstash --strip-components 1
+    echo "Installation completed, folder under /root/Downloads/logstash/"
 else
     echo "Out of options please choose between 1-3"
 fi
