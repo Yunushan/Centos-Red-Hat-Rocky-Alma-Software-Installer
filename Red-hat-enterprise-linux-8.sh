@@ -280,8 +280,13 @@ printf "\n"
 
 #Necessary Packages
 #sudo dnf -vy update
-sudo subscription-manager repos --enable codeready-builder-for-rhel-8-"$(arch)"-rpms
-sudo subscription-manager repos --enable "rhel-*-optional-rpms" --enable "rhel-*-extras-rpms"
+CODEREADY_BUILDER=$(yum repolist | grep -qi "codeready-builder-for-rhel")
+if [ -z "$CODEREADY_BUILDER" ];then
+    :
+else
+    sudo subscription-manager repos --enable codeready-builder-for-rhel-8-"$(arch)"-rpms
+fi
+#sudo subscription-manager repos --enable "rhel-*-optional-rpms" --enable "rhel-*-extras-rpms"
 sudo dnf -vy install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 sudo dnf -vy install yum-utils dnf-utils
 sudo dnf -vy install --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm \
