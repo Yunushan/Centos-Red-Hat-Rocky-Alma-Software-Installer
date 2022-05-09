@@ -31,7 +31,7 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
 "VLC ${opts[38]}" "UFW ${opts[39]}" "Fail2ban ${opts[40]}" "Google Authenticator ${opts[41]}" "Composer ${opts[42]}" 
 "Podman ${opts[43]}" "NFS Server ${opts[44]}" "Elasticsearch ${opts[45]}" "Kibana ${opts[46]}"
 "pgAdmin ${opts[47]}" "pgAgent ${opts[48]}" "Zabbix Agent ${opts[49]}" "Enterprise Search ${opts[50]}" 
-"Logstash ${opts[51]}" "Gitea ${opts[52]}" "Done ${opts[53]}")
+"Logstash ${opts[51]}" "Gitea ${opts[52]}" "PhpMyAdmin ${opts[53]}" "Done ${opts[54]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -243,10 +243,14 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
                 choice 52
                 break
                 ;;
-            "Done ${opts[53]}")
+            "PhpMyAdmin ${opts[53]}")
+                choice 53
+                break
+                ;;
+            "Done ${opts[54]}")
                 break 2
                 ;;
-            *) printf '%s\n' 'Please Choose Between 1-53';;
+            *) printf '%s\n' 'Please Choose Between 1-54';;
         esac
     done
 done
@@ -1548,7 +1552,7 @@ printf "\nSamba Installation Has Finished ."
 18)
 #Mysql
 printf "\nPlease Choose Your Desired Mysql Version\n\n1-)Mysql 8.0\n2-)Mysql 5.7\n3-)Mysql 5.6\n\
-4-)Mysql 5.5\n6-)Mysql 8 (Latest)\n\nPlease Select Your Mysql Version:"
+4-)Mysql 5.5\n5-)Mysql 8 (Latest)\n\nPlease Select Your Mysql Version:"
 read -r mysqlversion
 if [ "$mysqlversion" = "1" ];then
     sudo dnf -vy remove @mysql
@@ -3306,6 +3310,105 @@ else
     echo "Out of options please choose between 1-3"
 fi
 ;;
+
+53)
+#PhpMyAdmin
+printf "\nPlease Choose Your Desired PhpMyAdmin Version\n\n1-) PhpMyAdmin (For Apache(httpd))\n\
+2-) PhpMyAdmin (For Nginx)\n\nPlease Select Your PhpMyAdmin Version:"
+read -r phpmyadmin_version
+if [ "$phpmyadmin_version" = "1" ];then
+    phpmyadmin_link=$(lynx -dump https://www.phpmyadmin.net/files/ | awk '/http/ {print $2}' \
+    | grep -iv "sha256\|asc\|rc\|alpha\|beta\|all-languages\|feed" | grep -i files | head -n 1)
+    phpmyadmin_link=$(lynx -dump "$phpmyadmin_link" | awk '/http/ {print $2}' | grep -iv "asc\|sha256\|rc" \
+    | grep -i ".tar.gz" | grep -i "all-languages" | head -n 1)
+    wget -O /root/Downloads/phpmyadmin.tar.gz "$phpmyadmin_link" 
+    sudo mkdir -pv /var/www/html/phpmyadmin
+    tar -xvf /root/Downloads/phpmyadmin.tar.gz -C /var/www/html/phpmyadmin --strip-components 1
+    chown -R apache:apache /var/www/html/phpmyadmin
+    cd /var/www/html/phpmyadmin
+    sudo mv -v /var/www/html/phpmyadmin/config.sample.inc.php config.inc.php
+    sed -i "s/''/'MeFZGYawNmtMYGdR.Zs8hQ4dQ1[plUgV'/g" /var/www/html/phpmyadmin/config.inc.php
+    echo "Alias /phpmyadmin /var/www/html/phpmyadmin
+
+<Directory /var/www/html/phpmyadmin/>
+	AddDefaultCharset UTF-8
+	<IfModule mod_authz_core.c>
+		# Apache 2.4
+		<RequireAny>
+			Require all granted
+		</RequireAny>
+	</IfModule>
+	<IfModule !mod_authz_core.c>
+		# Apache 2.2
+		Order Deny,Allow
+		Deny from All
+		Allow from 127.0.0.1
+		Allow from ::1
+	</IfModule>
+</Directory>
+<Directory /var/www/html/phpmyadmin/setup/>
+	<IfModule mod_authz_core.c>
+		# Apache 2.4
+		<RequireAny>
+			Require all granted
+		</RequireAny>
+	</IfModule>
+	<IfModule !mod_authz_core.c>
+			# Apache 2.2
+			Order Deny,Allow
+			Deny from All
+			Allow from 127.0.0.1
+			Allow from ::1
+	</IfModule>
+</Directory>" > /etc/httpd/conf.d/phpmyadmin.conf
+    systemctl restart httpd
+elif [ "$phpmyadmin_version" = "2" ];then
+    phpmyadmin_link=$(lynx -dump https://www.phpmyadmin.net/files/ | awk '/http/ {print $2}' \
+    | grep -iv "sha256\|asc\|rc\|alpha\|beta\|all-languages\|feed" | grep -i files | head -n 1)
+    phpmyadmin_link=$(lynx -dump "$phpmyadmin_link" | awk '/http/ {print $2}' | grep -iv "asc\|sha256\|rc" \
+    | grep -i ".tar.gz" | grep -i "all-languages" | head -n 1)
+    wget -O /root/Downloads/phpmyadmin.tar.gz "$phpmyadmin_link" 
+    sudo mkdir -pv /var/www/html/phpmyadmin
+    tar -xvf /root/Downloads/phpmyadmin.tar.gz -C /var/www/html/phpmyadmin --strip-components 1
+    chown -R nginx:nginx /var/www/html/phpmyadmin
+    cd /var/www/html/phpmyadmin
+    sudo mv -v /var/www/html/phpmyadmin/config.sample.inc.php config.inc.php
+    sed -i "s/''/'MeFZGYawNmtMYGdR.Zs8hQ4dQ1[plUgV'/g" /var/www/html/phpmyadmin/config.inc.php
+    echo "server {
+   listen 80;
+   server_name http://192.168.0.45/phpmyadmin/;
+   root /var/www/html/phpmyadmin;
+
+   location / {
+      index index.php;
+   }
+
+## Images and static content is treated different
+   location ~* ^.+.(jpg|jpeg|gif|css|png|js|ico|xml)$ {
+      access_log off;
+      expires 30d;
+   }
+
+   location ~ /\.ht {
+      deny all;
+   }
+
+   location ~ /(libraries|setup/frames|setup/libs) {
+      deny all;
+      return 404;
+   }
+
+   location ~ \.php$ {
+      include /etc/nginx/fastcgi_params;
+      fastcgi_pass 127.0.0.1:9000;
+      fastcgi_index index.php;
+      fastcgi_param SCRIPT_FILENAME /var/www/html/phpmyadmin$fastcgi_script_name;
+   }
+}" > /etc/nginx/conf.d/phpmyadmin.conf
+    systemctl restart nginx
+else
+    echo "Out of options please choose between 1-2"
+fi
         esac
     fi
 done
