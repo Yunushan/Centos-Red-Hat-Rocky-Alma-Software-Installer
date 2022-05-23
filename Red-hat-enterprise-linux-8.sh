@@ -31,7 +31,8 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
 "VLC ${opts[38]}" "UFW ${opts[39]}" "Fail2ban ${opts[40]}" "Google Authenticator ${opts[41]}" "Composer ${opts[42]}" 
 "Podman ${opts[43]}" "NFS Server ${opts[44]}" "Elasticsearch ${opts[45]}" "Kibana ${opts[46]}"
 "pgAdmin ${opts[47]}" "pgAgent ${opts[48]}" "Zabbix Agent ${opts[49]}" "Enterprise Search ${opts[50]}" 
-"Logstash ${opts[51]}" "Gitea ${opts[52]}" "PhpMyAdmin ${opts[53]}" "Done ${opts[54]}")
+"Logstash ${opts[51]}" "Gitea ${opts[52]}" "PhpMyAdmin ${opts[53]}" "Wazuh Server ${opts[54]}" "Wazuh Agent ${opts[55]}" 
+"Done ${opts[56]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -247,10 +248,18 @@ options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Python ${opts[3]}" "Wine
                 choice 53
                 break
                 ;;
-            "Done ${opts[54]}")
+            "Wazuh Server ${opts[54]}")
+                choice 54
+                break
+                ;;
+            "Wazuh Agent ${opts[55]}")
+                choice 55
+                break
+                ;;
+            "Done ${opts[56]}")
                 break 2
                 ;;
-            *) printf '%s\n' 'Please Choose Between 1-54';;
+            *) printf '%s\n' 'Please Choose Between 1-56';;
         esac
     done
 done
@@ -3409,6 +3418,41 @@ elif [ "$phpmyadmin_version" = "2" ];then
 else
     echo "Out of options please choose between 1-2"
 fi
+
+54)
+#Wazuh Server
+printf "\nPlease Choose Your Desired Wazuh Server Installation\n\n1-) Wazuh Server (Unattended Installation\n\
+2-) Wazuh Server (Step-By-Step Installation)\n\nPlease Select Your Wazuh Server Version:"
+read -r wazuh_server_version
+if [ "$wazuh_server_version" = "1" ];then
+
+elif [ "$phpmyadmin_version" = "2" ];then
+    cd /root/Downloads
+    curl -so wazuh-installation.sh \
+    https://packages.wazuh.com/resources/4.2/open-distro/unattended-installation/unattended-installation.sh
+    sudo bash ./wazuh-installation.sh
+else
+    echo "Out of options please choose between 1-2"
+fi
+
+55)
+#Wazuh Agent
+printf "\nPlease Enter Your Wazuh Server ip :"
+read -r WAZUH_MANAGER
+rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH
+cat > /etc/yum.repos.d/wazuh.repo << EOF
+[wazuh]
+gpgcheck=1
+gpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH
+enabled=1
+name=EL-\$releasever - Wazuh
+baseurl=https://packages.wazuh.com/4.x/yum/
+protect=1
+EOF
+WAZUH_MANAGER="$WAZUH_MANAGER" yum install wazuh-agent
+systemctl daemon-reload
+systemctl enable wazuh-agent
+systemctl start wazuh-agent
         esac
     fi
 done
