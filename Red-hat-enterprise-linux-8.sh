@@ -305,7 +305,7 @@ sudo dnf -vy install yum-utils dnf-utils
 sudo dnf -vy install --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm \
 https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm
 sudo dnf -vy install wget curl mlocate nano lynx net-tools git iftop htop snapd bash-completion make cmake \
-bind-utils iotop powertop atop bzip2 bzip2-devel bzip2-libs redhat-lsb-core mc unzip
+bind-utils iotop powertop atop bzip2 bzip2-devel bzip2-libs redhat-lsb-core mc unzip wget
 sudo systemctl enable --now snapd.socket
 sudo ln -s /var/lib/snapd/snap /snap
 export PATH=$PATH:/snap/bin
@@ -3418,14 +3418,14 @@ elif [ "$phpmyadmin_version" = "2" ];then
 else
     echo "Out of options please choose between 1-2"
 fi
-
+;;
 54)
 #Wazuh Server
 printf "\nPlease Choose Your Desired Wazuh Server Installation\n\n1-) Wazuh Server (Unattended Installation\n\
 2-) Wazuh Server (Step-By-Step Installation)\n\nPlease Select Your Wazuh Server Version:"
 read -r wazuh_server_version
 if [ "$wazuh_server_version" = "1" ];then
-
+    echo "Test"
 elif [ "$phpmyadmin_version" = "2" ];then
     cd /root/Downloads
     curl -so wazuh-installation.sh \
@@ -3434,7 +3434,7 @@ elif [ "$phpmyadmin_version" = "2" ];then
 else
     echo "Out of options please choose between 1-2"
 fi
-
+;;
 55)
 #Wazuh Agent
 printf "\nPlease Enter Your Wazuh Server ip :"
@@ -3453,6 +3453,7 @@ WAZUH_MANAGER="$WAZUH_MANAGER" yum install wazuh-agent
 systemctl daemon-reload
 systemctl enable wazuh-agent
 systemctl start wazuh-agent
+;;
         esac
     fi
 done
