@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#1-Php installer.sh
+#1-Php
 printf "\nPlease Choose Your Desired PHP Version \n\n1-) PHP 8.0 (Red Hat Official Package)\n\
 2-) PHP 7.4 (Remi Release)\n3-) PHP 8.1 (Remi Release)\n4-) PHP 8.2 (Remi Release)\n\nPlease Select Your PHP Version:"
 read -r php_version
