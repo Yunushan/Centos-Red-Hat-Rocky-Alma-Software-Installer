@@ -305,7 +305,7 @@ sudo dnf -vy install yum-utils dnf-utils
 sudo dnf -vy install --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm \
 https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm
 sudo dnf -vy install wget curl mlocate nano lynx net-tools git iftop htop snapd bash-completion make cmake \
-bind-utils iotop powertop atop bzip2 bzip2-devel bzip2-libs redhat-lsb-core mc unzip
+bind-utils iotop powertop atop bzip2 bzip2-devel bzip2-libs redhat-lsb-core mc unzip wget
 sudo systemctl enable --now snapd.socket
 sudo ln -s /var/lib/snapd/snap /snap
 export PATH=$PATH:/snap/bin
@@ -702,9 +702,9 @@ elif [ "$opensslversion" = "5" ];then
     sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build rpmdevtools rpmlint
     rpmdev-setuptree
     sudo dnf -vy remove openssl openssl-devel
-    wget -O /root/rpmbuild/SOURCES/openssl-1.1.1n.tar.gz https://www.openssl.org/source/openssl-1.1.1n.tar.gz
+    wget -O /root/rpmbuild/SOURCES/openssl-1.1.1o.tar.gz https://www.openssl.org/source/openssl-1.1.1o.tar.gz
 cat << 'EOF' > /root/rpmbuild/SPECS/openssl.spec
-Summary: OpenSSL 1.1.1n for RedHat
+Summary: OpenSSL 1.1.1o for RedHat
 Name: openssl
 Version: %{?version}%{!?version:1.1.1n}
 Release: 1%{?dist}
@@ -718,13 +718,13 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 %global openssldir /usr/openssl
 %description
 https://github.com/philyuchkoff/openssl-RPM-Builder
-OpenSSL RPM for version 1.1.1n on RedHat
+OpenSSL RPM for version 1.1.1o on RedHat
 %package devel
 Summary: Development files for programs which will use the openssl library
 Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
 %description devel
-OpenSSL RPM for version 1.1.1n on RedHat (development package)
+OpenSSL RPM for version 1.1.1o on RedHat (development package)
 %prep
 %setup -q
 %build
@@ -756,17 +756,17 @@ EOF
         rpmbuild \
         -D 'debug_package %{nil}' \
         -ba openssl.spec
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-1.1.1n-1.el8.x86_64.rpm --nodeps --force
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-1.1.1n-1.el8.x86_64.rpm
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-1.1.1o-1.el8.x86_64.rpm --nodeps --force
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-1.1.1o-1.el8.x86_64.rpm
 elif [ "$opensslversion" = "6" ];then
     sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build rpmdevtools rpmlint
     rpmdev-setuptree
-    wget -O /root/rpmbuild/SOURCES/openssl-3.0.2.tar.gz https://www.openssl.org/source/openssl-3.0.2.tar.gz
+    wget -O /root/rpmbuild/SOURCES/openssl-3.0.3.tar.gz https://www.openssl.org/source/openssl-3.0.3.tar.gz
     sudo dnf -vy remove openssl openssl-devel
     cat << 'EOF' > /root/rpmbuild/SPECS/openssl.spec
-Summary: OpenSSL 3.0.2 for Red Hat
+Summary: OpenSSL 3.0.3 for Red Hat
 Name: openssl
-Version: %{?version}%{!?version:3.0.2}
+Version: %{?version}%{!?version:3.0.3}
 Release: 1%{?dist}
 Obsoletes: %{name} <= %{version}
 Provides: %{name} = %{version}
@@ -781,7 +781,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
 https://github.com/philyuchkoff/openssl-RPM-Builder
-OpenSSL RPM for version 3.0.2 on Red Hat
+OpenSSL RPM for version 3.0.3 on Red Hat
 
 %package devel
 Summary: Development files for programs which will use the openssl library
@@ -789,7 +789,7 @@ Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
 
 %description devel
-OpenSSL RPM for version 3.0.2 on Red Hat (development package)
+OpenSSL RPM for version 3.0.3 on Red Hat (development package)
 
 %prep
 %setup -q
@@ -828,8 +828,8 @@ EOF
     rpmbuild \
     -D 'debug_package %{nil}' \
     -ba openssl.spec
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-3.0.2-1.el8.x86_64.rpm --nodeps
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-3.0.2-1.el8.x86_64.rpm
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-3.0.3-1.el8.x86_64.rpm --nodeps
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-3.0.3-1.el8.x86_64.rpm
     ln -s /usr/openssl/lib64/libssl.so.3 /usr/lib64/libssl.so.3
     ln -s /usr/openssl/lib64/libcrypto.so.3 /usr/lib64/libcrypto.so.3
     ln -s /usr/openssl/bin/openssl /usr/bin/openssl
@@ -1134,11 +1134,11 @@ elif [ "$opensslversion" = "5" ];then
     sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build rpmdevtools rpmlint
     rpmdev-setuptree
     sudo dnf -vy remove openssl openssl-devel
-    wget -O /root/rpmbuild/SOURCES/openssl-1.1.1n.tar.gz https://www.openssl.org/source/openssl-1.1.1n.tar.gz
+    wget -O /root/rpmbuild/SOURCES/openssl-1.1.1o.tar.gz https://www.openssl.org/source/openssl-1.1.1o.tar.gz
 cat << 'EOF' > /root/rpmbuild/SPECS/openssl.spec
-Summary: OpenSSL 1.1.1n for RedHat
+Summary: OpenSSL 1.1.1o for RedHat
 Name: openssl
-Version: %{?version}%{!?version:1.1.1n}
+Version: %{?version}%{!?version:1.1.1o}
 Release: 1%{?dist}
 Obsoletes: %{name} <= %{version}
 Provides: %{name} = %{version}
@@ -1150,13 +1150,13 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 %global openssldir /usr/openssl
 %description
 https://github.com/philyuchkoff/openssl-RPM-Builder
-OpenSSL RPM for version 1.1.1n on RedHat
+OpenSSL RPM for version 1.1.1o on RedHat
 %package devel
 Summary: Development files for programs which will use the openssl library
 Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
 %description devel
-OpenSSL RPM for version 1.1.1n on RedHat (development package)
+OpenSSL RPM for version 1.1.1o on RedHat (development package)
 %prep
 %setup -q
 %build
@@ -1188,17 +1188,17 @@ EOF
         rpmbuild \
         -D 'debug_package %{nil}' \
         -ba openssl.spec
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-1.1.1n-1.el8.x86_64.rpm --nodeps --force
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-1.1.1n-1.el8.x86_64.rpm
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-1.1.1o-1.el8.x86_64.rpm --nodeps --force
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-1.1.1o-1.el8.x86_64.rpm
 elif [ "$opensslversion" = "6" ];then
     sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build rpmdevtools rpmlint
     rpmdev-setuptree
-    wget -O /root/rpmbuild/SOURCES/openssl-3.0.2.tar.gz https://www.openssl.org/source/openssl-3.0.2.tar.gz
+    wget -O /root/rpmbuild/SOURCES/openssl-3.0.3.tar.gz https://www.openssl.org/source/openssl-3.0.3.tar.gz
     sudo dnf -vy remove openssl openssl-devel
     cat << 'EOF' > /root/rpmbuild/SPECS/openssl.spec
-Summary: OpenSSL 3.0.2 for Red Hat
+Summary: OpenSSL 3.0.3 for Red Hat
 Name: openssl
-Version: %{?version}%{!?version:3.0.2}
+Version: %{?version}%{!?version:3.0.3}
 Release: 1%{?dist}
 Obsoletes: %{name} <= %{version}
 Provides: %{name} = %{version}
@@ -1213,7 +1213,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
 https://github.com/philyuchkoff/openssl-RPM-Builder
-OpenSSL RPM for version 3.0.2 on Red Hat
+OpenSSL RPM for version 3.0.3 on Red Hat
 
 %package devel
 Summary: Development files for programs which will use the openssl library
@@ -1221,7 +1221,7 @@ Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
 
 %description devel
-OpenSSL RPM for version 3.0.2 on Red Hat (development package)
+OpenSSL RPM for version 3.0.3 on Red Hat (development package)
 
 %prep
 %setup -q
@@ -1260,8 +1260,8 @@ EOF
     rpmbuild \
     -D 'debug_package %{nil}' \
     -ba openssl.spec
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-3.0.2-1.el8.x86_64.rpm --nodeps
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-3.0.2-1.el8.x86_64.rpm
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-3.0.3-1.el8.x86_64.rpm --nodeps
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-3.0.3-1.el8.x86_64.rpm
     ln -s /usr/openssl/lib64/libssl.so.3 /usr/lib64/libssl.so.3
     ln -s /usr/openssl/lib64/libcrypto.so.3 /usr/lib64/libcrypto.so.3
     ln -s /usr/openssl/bin/openssl /usr/bin/openssl
@@ -3418,14 +3418,14 @@ elif [ "$phpmyadmin_version" = "2" ];then
 else
     echo "Out of options please choose between 1-2"
 fi
-
+;;
 54)
 #Wazuh Server
 printf "\nPlease Choose Your Desired Wazuh Server Installation\n\n1-) Wazuh Server (Unattended Installation\n\
 2-) Wazuh Server (Step-By-Step Installation)\n\nPlease Select Your Wazuh Server Version:"
 read -r wazuh_server_version
 if [ "$wazuh_server_version" = "1" ];then
-
+    echo "Test"
 elif [ "$phpmyadmin_version" = "2" ];then
     cd /root/Downloads
     curl -so wazuh-installation.sh \
@@ -3434,7 +3434,7 @@ elif [ "$phpmyadmin_version" = "2" ];then
 else
     echo "Out of options please choose between 1-2"
 fi
-
+;;
 55)
 #Wazuh Agent
 printf "\nPlease Enter Your Wazuh Server ip :"
@@ -3453,6 +3453,7 @@ WAZUH_MANAGER="$WAZUH_MANAGER" yum install wazuh-agent
 systemctl daemon-reload
 systemctl enable wazuh-agent
 systemctl start wazuh-agent
+;;
         esac
     fi
 done
