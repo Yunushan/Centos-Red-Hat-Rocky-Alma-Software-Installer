@@ -23,7 +23,7 @@ while :
 do
     clear
     options=("PHP ${opts[1]}" "Nginx ${opts[2]}" "Apache ${opts[3]}" "Grub Customizer ${opts[4]}" "Linux Kernel ${opts[5]}" 
-    "FFmpeg ${opts[6]}" "Done ${opts[7]}")
+    "FFmpeg ${opts[6]}" "OpenSSL ${opts[7]}" "OpenSSH ${opts[8]}" "Done ${opts[9]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -51,7 +51,15 @@ do
                 choice 6
                 break
                 ;;
-            "Done ${opts[7]}")
+            "OpenSSL ${opts[7]}")
+                choice 7
+                break
+                ;;
+            "OpenSSH ${opts[8]}")
+                choice 8
+                break
+                ;;
+            "Done ${opts[9]}")
                 break 2
                 ;;
 
@@ -144,6 +152,14 @@ do
             6)
             # 6-FFmpeg
             . "$scripts_path/6-Ffmpeg.sh"
+            ;;
+            7)
+            # 7-OpenSSL
+            . "$scripts_path/7-Openssl.sh"
+            ;;
+            8)
+            # 8-OpenSSH
+            . "$scripts_path/8-Openssh.sh"
             ;;
         esac
     fi
