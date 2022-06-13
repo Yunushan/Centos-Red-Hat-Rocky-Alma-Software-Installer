@@ -7,11 +7,9 @@ read -r kernelversion
 rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
 sudo dnf -vy install https://www.elrepo.org/elrepo-release-9.el9.elrepo.noarch.rpm
 
-if [ "$kernelversion" = "1" ]
-then
+if [ "$kernelversion" = "1" ];then
     sudo dnf -vy --enablerepo=elrepo-kernel install kernel-ml
-elif [ "$kernelversion" = "2" ]
-then
+elif [ "$kernelversion" = "2" ];then
     sudo dnf -vy --enablerepo=elrepo-kernel install kernel-lt
 else
     echo "Out of options please choose between 1-2"

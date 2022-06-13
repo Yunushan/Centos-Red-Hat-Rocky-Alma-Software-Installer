@@ -6,11 +6,9 @@ printf "\nPlease Choose Your Desired OpenSSL Version\n\n1-)OpenSSL 3 (Official P
 4-)OpenSSL 1.1.1o (Create & Install .rpm file from .spec)\n\
 5-)OpenSSL 3.0.2 (.rpm file from .spec)\n\nPlease Select Your OpenSSL Version:"
 read -r opensslversion
-if [ "$opensslversion" = "1" ]
-then
+if [ "$opensslversion" = "1" ];then
     sudo dnf -vy install openssl openssl-devel openssl-libs
-elif [ "$opensslversion" = "2" ]
-then
+elif [ "$opensslversion" = "2" ];then
     sudo rm -rf /root/Downloads/openssl-latest
     sudo dnf -vy install perl gcc
     openssl_latest=$(lynx -dump https://www.openssl.org/source/ | awk '{print $2}' | grep -iv '.asc\|sha\|fips'\
@@ -24,8 +22,7 @@ then
     echo "export PATH="/usr/local/ssl/bin:"${PATH}""" >> ~/.bashrc
     ln -s /usr/local/lib64/libssl.so.3 /usr/lib64/libssl.so.3
     ln -s /usr/local/lib64/libcrypto.so.3 /usr/lib64/libcrypto.so.3
-elif [ "$opensslversion" = "3" ]
-then
+elif [ "$opensslversion" = "3" ];then
    #sudo dnf -vy remove openssl openssl-devel
     sudo rm -rf /root/Downloads/openssl-latest
     sudo dnf -vy group install 'Development Tools'
@@ -43,8 +40,7 @@ then
     #ln -s /usr/local/lib64/libssl.so.3 /usr/lib64/libssl.so.3
     #ln -s /usr/local/lib64/libcrypto.so.3 /usr/lib64/libcrypto.so.3
 
-elif [ "$opensslversion" = "4" ]
-then
+elif [ "$opensslversion" = "4" ];then
     sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build rpmdevtools rpmlint
     rpmdev-setuptree
     sudo dnf -vy remove openssl openssl-devel
@@ -105,8 +101,7 @@ EOF
     sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-1.1.1o-1.el9.x86_64.rpm --nodeps --force
     sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-1.1.1o-1.el9.x86_64.rpm
 
-elif [ "$opensslversion" = "5" ]
-then
+elif [ "$opensslversion" = "5" ];then
     sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build rpmdevtools rpmlint
     rpmdev-setuptree
     wget -O /root/rpmbuild/SOURCES/openssl-3.0.3.tar.gz https://www.openssl.org/source/openssl-3.0.3.tar.gz
@@ -190,13 +185,11 @@ printf "\nPlease Choose Your Desired Nginx Version\n\n1-) Nginx (Official Packag
 5-) Nginx (From nginx.repo Stable)\n6-) Nginx (From nginx.repo Mainline)\nPlease Select Your Nginx Version:"
 read -r nginx_version
 
-if [ "$nginx_version" = "1" ]
-then
+if [ "$nginx_version" = "1" ];then
     sudo dnf -vy instal nginx
     sudo systemctl start nginx
     sudo systemctl enable nginx
-elif [ "$nginx_version" = "2" ]
-then
+elif [ "$nginx_version" = "2" ];then
     sudo dnf -vy install gd gd-devel pcre-devel
     nginx_latest=$(lynx -dump http://nginx.org/en/download.html | awk '{print $2}' | grep -iv '.asc\|.zip' \
     | grep -i .tar.gz | head -n 1)
@@ -229,8 +222,7 @@ PrivateTmp=true
 WantedBy=multi-user.target" > /lib/systemd/system/nginx.service
     sudo systemctl start nginx
     sudo systemctl enable nginx
-elif [ "$nginx_version" = "3" ]
-then
+elif [ "$nginx_version" = "3" ];then
     sudo dnf -vy install yum-utils rpmdevtools rpm-build rpmdevtools rpmlint spectool
     sudo dnf -vy groupinstall "Development Tools"
     rpmdev-setuptree
@@ -244,8 +236,7 @@ then
     sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/nginx-*
     sudo systemctl start nginx
     sudo systemctl enable nginx
-elif [ "$nginx_version" = "4" ]
-then
+elif [ "$nginx_version" = "4" ];then
     nginx_latest_rpm=$(lynx -dump http://nginx.org/packages/rhel/9/x86_64/RPMS/ | awk '/http/ {print $2}' \
     | grep -iv 'perl\|njs\|xslt\|image-filter\|repodata\|debuginfo' | grep -i .el9.ngx.x86_64.rpm | tail -n 1)
     sudo mkdir -pv /root/Downloads
@@ -253,9 +244,8 @@ then
     sudo rpm -Uvh /root/Downloads/nginx-latest.rpm
     sudo systemctl start nginx
     sudo systemctl enable nginx
-elif [ "$nginx_version" = "5" ]
-then
-sudo dnf -vy install yum-utils
+elif [ "$nginx_version" = "5" ];then
+    sudo dnf -vy install yum-utils
     echo "[nginx-stable]
 name=nginx stable repo
 baseurl=http://nginx.org/packages/rhel/9/x86_64/
@@ -277,8 +267,7 @@ module_hotfixes=true" > /etc/yum.repos.d/nginx.repo
     sudo systemctl start nginx
     sudo systemctl enable nginx
 
-elif [ "$nginx_version" = "6" ]
-then
+elif [ "$nginx_version" = "6" ];then
     sudo dnf -vy install yum-utils
     echo "[nginx-stable]
 name=nginx stable repo

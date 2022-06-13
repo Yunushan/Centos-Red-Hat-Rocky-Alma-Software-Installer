@@ -5,7 +5,7 @@ cpuarch=$(uname -m)
 core=$(nproc)
 snap_path_is_include=$(export PATH="$PATH:/snap/bin/")
 scripts_path=$(find / -name scripts | grep -i "Red-Hat-Enterprise-Linux-9/scripts" | head -n 1)
-local_ip=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
+
 # Select Which Softwares to be Installed
 
 choice () {
@@ -23,7 +23,9 @@ while :
 do
     clear
     options=("PHP ${opts[1]}" "Nginx ${opts[2]}" "Apache ${opts[3]}" "Grub Customizer ${opts[4]}" "Linux Kernel ${opts[5]}" 
-    "FFmpeg ${opts[6]}" "OpenSSL ${opts[7]}" "OpenSSH ${opts[8]}" "Done ${opts[9]}")
+    "FFmpeg ${opts[6]}" "OpenSSL ${opts[7]}" "OpenSSH ${opts[8]}" "Mysql ${opts[9]}" "OpenJDK 8-11-17 ${opts[10]}"
+    "DVBlast 3.4 ${opts[11]}" "Zabbix Server ${opts[12]}" "UrBackup Server ${opts[13]}" "PostgreSQL ${opts[14]}" 
+    "Done ${opts[15]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -59,11 +61,35 @@ do
                 choice 8
                 break
                 ;;
-            "Done ${opts[9]}")
+            "Mysql ${opts[9]}")
+                choice 9
+                break
+                ;;
+            "OpenJDK 8-11-17 ${opts[10]}")
+                choice 10
+                break
+                ;;
+            "DVBlast 3.4 ${opts[11]}")
+                choice 11
+                break
+                ;;
+            "Zabbix Server ${opts[12]}")
+                choice 12
+                break
+                ;;
+            "UrBackup Server ${opts[13]}")
+                choice 13
+                break
+                ;;
+            "PostgreSQL ${opts[14]}")
+                choice 14
+                break
+                ;;
+            "Done ${opts[15]}")
                 break 2
                 ;;
 
-            *) printf '%s\n' 'Please Choose Between 1-7';;
+            *) printf '%s\n' 'Please Choose Between 1-15';;
         esac
     done
 done
@@ -114,6 +140,7 @@ export PATH=$PATH:/snap/bin
 source /etc/profile
 source /etc/profile.d/bash_completion.sh
 printf "\n"
+local_ip=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
 
 # Create Download Folder in root
 if [ -d "/root/Downloads/" ];then
@@ -160,6 +187,30 @@ do
             8)
             # 8-OpenSSH
             . "$scripts_path/8-Openssh.sh"
+            ;;
+            9)
+            # 9-Mysql
+            . "$scripts_path/8-Openssh.sh"
+            ;;
+            10)
+            # 10-OpenJDK 8-11-17
+            . "$scripts_path/10-Openjdk.sh"
+            ;;
+            11)
+            # 11-DVBlast 3.4
+            . "$scripts_path/11-Dvblast.sh"
+            ;;
+            12)
+            # 12-Zabbix Server
+            . "$scripts_path/12-Zabbix-Server.sh"
+            ;;
+            13)
+            # 13-UrBackup Server
+            . "$scripts_path/13-Urbackup-Server.sh"
+            ;;
+            14)
+            # 14-PostgreSQL
+            . "$scripts_path/14-Postgresql.sh"
             ;;
         esac
     fi
