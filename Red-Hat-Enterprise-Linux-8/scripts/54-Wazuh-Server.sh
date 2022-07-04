@@ -1,35 +1,150 @@
 #!/bin/bash
 
 #54-Wazuh Server
-printf "\nPlease Choose Your Desired Wazuh Server Installation\n\n1-) Wazuh Server (Unattended Installation\n\
+printf "\nPlease Choose Your Desired Wazuh Server Installation\n\n1-) Wazuh Server (Assistant Installation\n\
 2-) Wazuh Server (Step-By-Step Installation)\n\nPlease Select Your Wazuh Server Version:"
 read -r wazuh_server_version
 if [ "$wazuh_server_version" = "1" ];then
-    echo "Test"
-elif [ "$phpmyadmin_version" = "2" ];then
     cd /root/Downloads
-    curl -so wazuh-installation.sh \
-    https://packages.wazuh.com/resources/4.2/open-distro/unattended-installation/unattended-installation.sh
-    sudo bash ./wazuh-installation.sh
+    wget -O /root/Downloads/wazuh-install.sh https://packages.wazuh.com/4.3/wazuh-install.sh 
+  echo "nodes:
+  # Wazuh indexer nodes
+  indexer:
+    - name: node-1
+      ip: 127.0.0.1
+    # - name: node-2
+    #   ip: 127.0.0.1
+    # - name: node-3
+    #   ip: 127.0.0.1
+
+  # Wazuh server nodes
+  # Use node_type only with more than one Wazuh manager
+  server:
+    - name: wazuh-1
+      ip: 127.0.0.1
+    # node_type: master
+    # - name: wazuh-2
+    #   ip: 127.0.0.1
+    # node_type: worker
+
+  # Wazuh dashboard node
+  dashboard:
+    - name: dashboard
+      ip: 127.0.0.1" > /root/Downloads/config.yml
+    bash /root/Downloads/wazuh-install.sh --generate-config-files
+    bash /root/Downloads/wazuh-install.sh --wazuh-indexer node-1
+    bash /root/Downloads/wazuh-install.sh --start-cluster
+    #Wazuh Server Section
+    bash /root/Downloads/wazuh-install.sh --wazuh-server wazuh-1
+    #Wazuh Dashboard Section
+    bash /root/Downloads/wazuh-install.sh --wazuh-dashboard dashboard
+    tar -O -xvf wazuh-install-files.tar wazuh-install-files/passwords.wazuh
+elif [ "$wazuh_server_version" = "2" ];then
+    #Wazuh Indexer Section
+    wget -O /root/Downloads/wazuh-certs-tool.sh https://packages.wazuh.com/4.3/wazuh-certs-tool.sh
+      echo "nodes:
+  # Wazuh indexer nodes
+  indexer:
+    - name: node-1
+      ip: 127.0.0.1
+    # - name: node-2
+    #   ip: 127.0.0.1
+    # - name: node-3
+    #   ip: 127.0.0.1
+
+  # Wazuh server nodes
+  # Use node_type only with more than one Wazuh manager
+  server:
+    - name: wazuh-1
+      ip: 127.0.0.1
+    # node_type: master
+    # - name: wazuh-2
+    #   ip: 127.0.0.1
+    # node_type: worker
+
+  # Wazuh dashboard node
+  dashboard:
+    - name: dashboard
+      ip: 127.0.0.1" > /root/Downloads/config.yml
+    bash /root/Downloads/wazuh-certs-tool.sh -A
+    cd /root/Downloads/
+    tar -cvf ./wazuh-certificates.tar -C ./wazuh-certificates/ .
+    rm -rf ./wazuh-certificates
+    sudo dnf -vy install coreutils
+    rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH
+    echo -e '[wazuh]\ngpgcheck=1\ngpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH\nenabled=1\nname=EL-$releasever \
+    - Wazuh\nbaseurl=https://packages.wazuh.com/4.x/yum/\nprotect=1' | tee /etc/yum.repos.d/wazuh.repo
+    sudo dnf -vy install wazuh-indexer
+    sed -i -e 's/network.host: "0.0.0.0"/network.host: "127.0.0.1"/' /etc/wazuh-indexer/opensearch.yml
+    systemctl daemon-reload
+    systemctl enable wazuh-indexer
+    systemctl start wazuh-indexer
+    #Cluster installation
+    /usr/share/wazuh-indexer/bin/indexer-security-init.sh
+    curl -k -u admin:admin https://127.0.0.1:9200
+    curl -k -u admin:admin https://127.0.0.1:9200/_cat/nodes?v
+    #Wazuh Server Section
+    rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH
+    echo -e '[wazuh]\ngpgcheck=1\ngpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH\nenabled=1\nname=EL-$releasever \
+    - Wazuh\nbaseurl=https://packages.wazuh.com/4.x/yum/\nprotect=1' | tee /etc/yum.repos.d/wazuh.repo
+    sudo dnf -vy install wazuh-manager
+    systemctl daemon-reload
+    systemctl enable wazuh-manager
+    systemctl start wazuh-manager
+    sudo dnf -vy install filebeat
+    wget -O /etc/filebeat/filebeat.yml https://packages.wazuh.com/4.3/tpl/wazuh/filebeat/filebeat.yml
+    sed -i  '1i- 127.0.0.1:9200' /etc/filebeat/filebeat.yml
+    sed -i '1ioutput.elasticsearch.hosts:' /etc/filebeat/filebeat.yml
+    filebeat keystore create
+    echo admin | filebeat keystore add username --stdin --force
+    echo admin | filebeat keystore add password --stdin --force
+    curl -so /etc/filebeat/wazuh-template.json \
+    https://raw.githubusercontent.com/wazuh/wazuh/4.3/extensions/elasticsearch/7.x/wazuh-template.json
+    chmod go+r /etc/filebeat/wazuh-template.json
+    curl -s https://packages.wazuh.com/4.x/filebeat/wazuh-filebeat-0.2.tar.gz | tar -xvz -C /usr/share/filebeat/module
+    NODE_NAME=wazuh-server
+    mkdir /etc/filebeat/certs
+    tar -xf ./wazuh-certificates.tar -C /etc/filebeat/certs/ ./$NODE_NAME.pem ./$NODE_NAME-key.pem ./root-ca.pem
+    mv -n /etc/filebeat/certs/$NODE_NAME.pem /etc/filebeat/certs/filebeat.pem
+    mv -n /etc/filebeat/certs/$NODE_NAME-key.pem /etc/filebeat/certs/filebeat-key.pem
+    chmod 500 /etc/filebeat/certs
+    chmod 400 /etc/filebeat/certs/*
+    chown -R root:root /etc/filebeat/certs
+    systemctl daemon-reload
+    systemctl enable filebeat
+    systemctl start filebeat
+    filebeat test output
+    WAZUH_KEY=$(openssl rand -hex 16)
+    systemctl restart wazuh-manager
+    #Wazuh Dashboard Section
+    sudo dnf -vy install libcap
+    rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH
+    echo -e '[wazuh]\ngpgcheck=1\ngpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH\nenabled=1\nname=EL-$releasever \
+    - Wazuh\nbaseurl=https://packages.wazuh.com/4.x/yum/\nprotect=1' | tee /etc/yum.repos.d/wazuh.repo
+    sudo dnf -vy install wazuh-dashboard
+    NODE_NAME=wazuh-dashboard
+    mkdir /etc/wazuh-dashboard/certs
+    tar -xf ./wazuh-certificates.tar -C /etc/wazuh-dashboard/certs/ ./$NODE_NAME.pem ./$NODE_NAME-key.pem ./root-ca.pem
+    mv -n /etc/wazuh-dashboard/certs/$NODE_NAME.pem /etc/wazuh-dashboard/certs/dashboard.pem
+    mv -n /etc/wazuh-dashboard/certs/$NODE_NAME-key.pem /etc/wazuh-dashboard/certs/dashboard-key.pem
+    chmod 500 /etc/wazuh-dashboard/certs
+    chmod 400 /etc/wazuh-dashboard/certs/*
+    chown -R wazuh-dashboard:wazuh-dashboard /etc/wazuh-dashboard/certs
+    systemctl daemon-reload
+    systemctl enable wazuh-dashboard
+    systemctl start wazuh-dashboard
+    TOKEN=$(curl -u wazuh-wui:wazuh-wui -k -X GET "https://localhost:55000/security/user/authenticate?raw=true")
+    curl -k -X PUT "https://localhost:55000/security/users/1" -H "Authorization: Bearer $TOKEN" \
+    -H 'Content-Type: application/json' -d'
+    {
+      "password": "SuperS3cretPassword!"
+    }'
+    curl -k -X PUT "https://localhost:55000/security/users/2" -H "Authorization: Bearer $TOKEN" \
+    -H 'Content-Type: application/json' -d'
+    {
+      "password": "SuperS3cretPassword!"
+    }'
+    #systemctl restart wazuh-dashboard
 else
     echo "Out of options please choose between 1-2"
 fi
-;;
-55)
-#Wazuh Agent
-printf "\nPlease Enter Your Wazuh Server ip :"
-read -r WAZUH_MANAGER
-rpm --import https://packages.wazuh.com/key/GPG-KEY-WAZUH
-cat > /etc/yum.repos.d/wazuh.repo << EOF
-[wazuh]
-gpgcheck=1
-gpgkey=https://packages.wazuh.com/key/GPG-KEY-WAZUH
-enabled=1
-name=EL-\$releasever - Wazuh
-baseurl=https://packages.wazuh.com/4.x/yum/
-protect=1
-EOF
-WAZUH_MANAGER="$WAZUH_MANAGER" yum install wazuh-agent
-systemctl daemon-reload
-systemctl enable wazuh-agent
-systemctl start wazuh-agent

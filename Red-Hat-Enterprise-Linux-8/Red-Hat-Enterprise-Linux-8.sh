@@ -6,10 +6,12 @@ core=$(nproc)
 snap_path_is_include=$(export PATH="$PATH:/snap/bin/")
 scripts_path=$(find / -name scripts | grep -i "Red-Hat-Enterprise-Linux-8/scripts" | head -n 1)
 if [[ $(rpm -qa | grep -i net-tools) ]];then
-    local_ip=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
+    local_ip=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' \
+    | head -n 1)
 else
     dnf -vy install net-tools
-    local_ip=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
+    local_ip=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' \
+    | head -n 1)
 fi
 
 # Select Which Softwares to be Installed
@@ -34,11 +36,11 @@ while :;do
     "MariaDB ${opts[24]}" "PostgreSQL ${opts[25]}" "Postman ${opts[26]}" "Docker ${opts[27]}"
     "Jenkins ${opts[28]}" "Nodejs & Npm ${opts[29]}" "Tinc ${opts[30]}" "Irssi ${opts[31]}" "OpenNebula ${opts[32]}"
     "Links ${opts[33]}" "MongoDB ${opts[34]}" "Ansible ${opts[35]}" "ClamAV ${opts[36]}" "Graylog ${opts[37]}"
-    "VLC ${opts[38]}" "UFW ${opts[39]}" "Fail2ban ${opts[40]}" "Google Authenticator ${opts[41]}" "Composer ${opts[42]}" 
+    "VLC ${opts[38]}" "UFW ${opts[39]}" "Fail2ban ${opts[40]}" "Google Authenticator ${opts[41]}" "Composer ${opts[42]}"
     "Podman ${opts[43]}" "NFS Server ${opts[44]}" "Elasticsearch ${opts[45]}" "Kibana ${opts[46]}"
-    "pgAdmin ${opts[47]}" "pgAgent ${opts[48]}" "Zabbix Agent ${opts[49]}" "Enterprise Search ${opts[50]}" 
-    "Logstash ${opts[51]}" "Gitea ${opts[52]}" "PhpMyAdmin ${opts[53]}" "Wazuh Server ${opts[54]}" "Wazuh Agent ${opts[55]}" 
-    "Done ${opts[56]}")
+    "pgAdmin ${opts[47]}" "pgAgent ${opts[48]}" "Zabbix Agent ${opts[49]}" "Enterprise Search ${opts[50]}"
+    "Logstash ${opts[51]}" "Gitea ${opts[52]}" "PhpMyAdmin ${opts[53]}" "Wazuh Server ${opts[54]}" "Wazuh Agent ${opts[55]}"
+    "Passbolt CE ${opts[56]}" "Done ${opts[57]}")
     select opt in "${options[@]}";do
         case $opt in
             "PHP ${opts[1]}")
@@ -261,10 +263,14 @@ while :;do
                 choice 55
                 break
                 ;;
-            "Done ${opts[56]}")
+            "Passbolt CE ${opts[56]}")
+                choice 56
+                break
+                ;;
+            "Done ${opts[57]}")
                 break 2
                 ;;
-            *) printf '%s\n' 'Please Choose Between 1-56';;
+            *) printf '%s\n' 'Please Choose Between 1-57';;
         esac
     done
 done
@@ -544,6 +550,10 @@ for opt in "${!opts[@]}";do
             55)
             #55-Wazuh-Agent
             . "$scripts_path/55-Wazuh-Agent.sh"
+            ;;
+            56)
+            #56-Passbolt CE
+            . "$scripts_path/56-Passbolt-Ce.sh"
             ;;
         esac
     fi
