@@ -8,29 +8,29 @@ if [ "$wazuh_server_version" = "1" ];then
     cd /root/Downloads
     wget -O /root/Downloads/wazuh-install.sh https://packages.wazuh.com/4.3/wazuh-install.sh 
   echo "nodes:
-  # Wazuh indexer nodes
-  indexer:
-    - name: node-1
-      ip: 127.0.0.1
-    # - name: node-2
-    #   ip: 127.0.0.1
-    # - name: node-3
-    #   ip: 127.0.0.1
+# Wazuh indexer nodes
+indexer:
+  - name: node-1
+    ip: 127.0.0.1
+  # - name: node-2
+  #   ip: 127.0.0.1
+  # - name: node-3
+  #   ip: 127.0.0.1
 
-  # Wazuh server nodes
-  # Use node_type only with more than one Wazuh manager
-  server:
-    - name: wazuh-1
-      ip: 127.0.0.1
-    # node_type: master
-    # - name: wazuh-2
-    #   ip: 127.0.0.1
-    # node_type: worker
+# Wazuh server nodes
+# Use node_type only with more than one Wazuh manager
+server:
+  - name: wazuh-1
+    ip: 127.0.0.1
+  # node_type: master
+  # - name: wazuh-2
+  #   ip: 127.0.0.1
+  # node_type: worker
 
-  # Wazuh dashboard node
-  dashboard:
-    - name: dashboard
-      ip: 127.0.0.1" > /root/Downloads/config.yml
+# Wazuh dashboard node
+dashboard:
+  - name: dashboard
+    ip: 127.0.0.1" > /root/Downloads/config.yml
     bash /root/Downloads/wazuh-install.sh --generate-config-files
     bash /root/Downloads/wazuh-install.sh --wazuh-indexer node-1
     bash /root/Downloads/wazuh-install.sh --start-cluster
@@ -38,34 +38,36 @@ if [ "$wazuh_server_version" = "1" ];then
     bash /root/Downloads/wazuh-install.sh --wazuh-server wazuh-1
     #Wazuh Dashboard Section
     bash /root/Downloads/wazuh-install.sh --wazuh-dashboard dashboard
-    tar -O -xvf wazuh-install-files.tar wazuh-install-files/passwords.wazuh
+    sudo mkdir -pv wazuh-install-files
+    sudo touch wazuh-install-files/passwords.wazuh
+    tar -O -xvf wazuh-install-files.tar > wazuh-install-files/passwords.wazuh
 elif [ "$wazuh_server_version" = "2" ];then
     #Wazuh Indexer Section
     wget -O /root/Downloads/wazuh-certs-tool.sh https://packages.wazuh.com/4.3/wazuh-certs-tool.sh
-      echo "nodes:
-  # Wazuh indexer nodes
-  indexer:
-    - name: node-1
-      ip: 127.0.0.1
-    # - name: node-2
-    #   ip: 127.0.0.1
-    # - name: node-3
-    #   ip: 127.0.0.1
+  echo "nodes:
+# Wazuh indexer nodes
+indexer:
+  - name: node-1
+    ip: 127.0.0.1
+  # - name: node-2
+  #   ip: 127.0.0.1
+  # - name: node-3
+  #   ip: 127.0.0.1
 
-  # Wazuh server nodes
-  # Use node_type only with more than one Wazuh manager
-  server:
-    - name: wazuh-1
-      ip: 127.0.0.1
-    # node_type: master
-    # - name: wazuh-2
-    #   ip: 127.0.0.1
-    # node_type: worker
+# Wazuh server nodes
+# Use node_type only with more than one Wazuh manager
+server:
+  - name: wazuh-1
+    ip: 127.0.0.1
+  # node_type: master
+  # - name: wazuh-2
+  #   ip: 127.0.0.1
+  # node_type: worker
 
-  # Wazuh dashboard node
-  dashboard:
-    - name: dashboard
-      ip: 127.0.0.1" > /root/Downloads/config.yml
+# Wazuh dashboard node
+dashboard:
+  - name: dashboard
+    ip: 127.0.0.1" > /root/Downloads/config.yml
     bash /root/Downloads/wazuh-certs-tool.sh -A
     cd /root/Downloads/
     tar -cvf ./wazuh-certificates.tar -C ./wazuh-certificates/ .
