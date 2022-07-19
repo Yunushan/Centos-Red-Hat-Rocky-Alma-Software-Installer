@@ -63,39 +63,39 @@ systemctl start httpd
 elif [ "$apacheversion" = "3" ];then
     sudo dnf -vy remove httpd
     sudo mkdir -pv /root/Downloads/httpd
-    wget -O /root/Downloads/httpd/httpd-2.4.53.tar.bz2 https://dlcdn.apache.org//httpd/httpd-2.4.53.tar.bz2
+    wget -O /root/Downloads/httpd/httpd-2.4.54.tar.bz2 https://dlcdn.apache.org//httpd/httpd-2.4.54.tar.bz2
     sudo dnf -vy install autoconf libuuid-devel lua \
     libxml2-devel apr apr-util apr-util-devel \
     perl make cmake gcc rpm-build rpmdevtools rpmlint pcre-devel libselinux-devel
     sudo dnf -vy install https://rpmfind.net/linux/centos-stream/9-stream/CRB/x86_64/os/Packages/lua-devel-5.4.2-4.el9.x86_64.rpm
     rpmdev-setuptree
     cd /root/Downloads/httpd
-    rpmbuild -tb httpd-2.4.53.tar.bz2
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-2.4.53-1.x86_64.rpm
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/mod_ssl-2.4.53-1.x86_64.rpm
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-devel-2.4.53-1.x86_64.rpm
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-tools-2.4.53-1.x86_64.rpm
+    rpmbuild -tb httpd-2.4.54.tar.bz2
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-2.4.54-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/mod_ssl-2.4.54-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-devel-2.4.54-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-tools-2.4.54-1.x86_64.rpm
     systemctl enable httpd
     systemctl start httpd
 elif [ "$apacheversion" = "4" ];then
     sudo dnf -vy remove httpd
     sudo dnf -vy install rpm-build rpmdevtools rpmlint openssl-devel
     rpmdev-setuptree
-    sudo mkdir -pv /root/rpmbuild/SOURCES/httpd-2.4.53
-    wget -O /root/rpmbuild/SOURCES/httpd-2.4.53.tar.bz2 https://dlcdn.apache.org//httpd/httpd-2.4.53.tar.bz2
-    tar -xvf /root/rpmbuild/SOURCES/httpd-2.4.53.tar.bz2 -C /root/rpmbuild/SOURCES/httpd-2.4.53 --strip-components 1
+    sudo mkdir -pv /root/rpmbuild/SOURCES/httpd-2.4.54
+    wget -O /root/rpmbuild/SOURCES/httpd-2.4.54.tar.bz2 https://dlcdn.apache.org//httpd/httpd-2.4.54.tar.bz2
+    tar -xvf /root/rpmbuild/SOURCES/httpd-2.4.54.tar.bz2 -C /root/rpmbuild/SOURCES/httpd-2.4.54 --strip-components 1
     sudo dnf -vy install autoconf libuuid-devel lua \
     libxml2-devel apr apr-util apr-util-devel \
     perl make cmake gcc rpm-build rpmdevtools rpmlint pcre-devel libselinux-devel
     sudo dnf -vy install https://rpmfind.net/linux/centos-stream/9-stream/CRB/x86_64/os/Packages/lua-devel-5.4.2-4.el9.x86_64.rpm
-    sudo cp -v /root/rpmbuild/SOURCES/httpd-2.4.53/httpd.spec /root/rpmbuild/SPECS/
+    sudo cp -v /root/rpmbuild/SOURCES/httpd-2.4.54/httpd.spec /root/rpmbuild/SPECS/
     grep -qxF '        --prefix=/etc/httpd \' /root/rpmbuild/SPECS/httpd.spec || \
     sudo sed -i '/--enable-case-filter/a \ \ \ \ \ \ \ \ --prefix=/etc/httpd \\' /root/rpmbuild/SPECS/httpd.spec
     rpmbuild -ba /root/rpmbuild/SPECS/httpd.spec
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-2.4.53-1.x86_64.rpm
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/mod_ssl-2.4.53-1.x86_64.rpm
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-devel-2.4.53-1.x86_64.rpm
-    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-tools-2.4.53-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-2.4.54-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/mod_ssl-2.4.54-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-devel-2.4.54-1.x86_64.rpm
+    sudo dnf -vy install /root/rpmbuild/RPMS/x86_64/httpd-tools-2.4.54-1.x86_64.rpm
     systemctl enable httpd
     systemctl start httpd
 else

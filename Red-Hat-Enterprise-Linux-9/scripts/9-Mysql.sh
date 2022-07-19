@@ -138,13 +138,13 @@ gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-mysql" > /etc/yum.repos.d/mysql-commu
         fi
     fi
 elif [ "$mysqlversion" = "5" ];then
-    mysql_community_server=$(lynx -dump https://dev.mysql.com/downloads/file/?id=509898 | awk '/http/{print $2}' \
+    mysql_community_server=$(lynx -dump https://dev.mysql.com/downloads/file/?id=511355 | awk '/http/{print $2}' \
     | grep -i rpm | head -n 1)
-    mysql_community_client=$(lynx -dump https://dev.mysql.com/downloads/file/?id=509895 | awk '/http/{print $2}' \
+    mysql_community_client=$(lynx -dump https://dev.mysql.com/downloads/file/?id=511352 | awk '/http/{print $2}' \
     | grep -i rpm | head -n 1)
-    mysql_community_common=$(lynx -dump https://dev.mysql.com/downloads/file/?id=509896 | awk '/http/{print $2}' \
+    mysql_community_common=$(lynx -dump https://dev.mysql.com/downloads/file/?id=511353 | awk '/http/{print $2}' \
     | grep -i rpm | head -n 1)
-    mysql_community_icu_data_files=$(lynx -dump https://dev.mysql.com/downloads/file/?id=509907 | awk '/http/{print $2}' \
+    mysql_community_icu_data_files=$(lynx -dump https://dev.mysql.com/downloads/file/?id=511364 | awk '/http/{print $2}' \
     | grep -i rpm | head -n 1)
     sudo wget -O /root/Downloads/mysql-community-server-latest.rpm "$mysql_community_server"
     sudo wget -O /root/Downloads/mysql-community-client-latest.rpm "$mysql_community_client"

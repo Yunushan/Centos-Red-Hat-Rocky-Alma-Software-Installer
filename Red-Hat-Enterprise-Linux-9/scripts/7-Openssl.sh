@@ -2,14 +2,14 @@
 
 # 7-OpenSSL
 
-printf "\nPlease Choose Your Desired OpenSSL Version\n\n1-)OpenSSL 3.0 (Official Package)\n\
+#OpenSSL Installation Section
+printf "\nPlease Choose Your Desired OpenSSL Version\n\n1-)OpenSSL 3 (Official Package)\n\
 2-)OpenSSL 3 Latest(Compile From Source)\n3-)OpenSSL 1 Latest (Compile From Source)\n\
-4-)OpenSSL 1.1.1o (Create & Install .rpm file From .spec)\n\
-5-)OpenSSL 3.0.3 (.rpm file from .spec)\n\nPlease Select Your OpenSSL Version:\n\nPlease Select Your OpenSSL Version:"
-
+4-)OpenSSL 1.1.1q (Create & Install .rpm file from .spec)\n\
+5-)OpenSSL 3.0.5 (.rpm file from .spec)\n\nPlease Select Your OpenSSL Version:"
 read -r opensslversion
 if [ "$opensslversion" = "1" ];then
-    sudo dnf -vy install openssl openssl-devel
+    sudo dnf -vy install openssl openssl-devel openssl-libs
 elif [ "$opensslversion" = "2" ];then
     sudo rm -rf /root/Downloads/openssl-latest
     sudo dnf -vy install perl gcc
@@ -25,7 +25,7 @@ elif [ "$opensslversion" = "2" ];then
     ln -s /usr/local/lib64/libssl.so.3 /usr/lib64/libssl.so.3
     ln -s /usr/local/lib64/libcrypto.so.3 /usr/lib64/libcrypto.so.3
 elif [ "$opensslversion" = "3" ];then
-    #sudo dnf -vy remove openssl openssl-devel
+   #sudo dnf -vy remove openssl openssl-devel
     sudo rm -rf /root/Downloads/openssl-latest
     sudo dnf -vy group install 'Development Tools'
     sudo dnf -vy install perl gcc
@@ -35,25 +35,22 @@ elif [ "$opensslversion" = "3" ];then
     sudo mkdir -pv /root/Downloads/openssl-latest
     tar -xvf /root/Downloads/openssl-latest.tar.gz -C /root/Downloads/openssl-latest --strip-components 1
     cd /root/Downloads/openssl-latest
-    ./config #--prefix=/usr         \
-         #--openssldir=/etc/ssl \
-         #--libdir=lib          \
-         #shared                \
-         #zlib-dynamic
+    ./config
     make -j "$core" && make -j "$core" install
     echo "export PATH="/usr/local/ssl/bin:"${PATH}""" >> ~/.bashrc
     source /root/.bashrc
     #ln -s /usr/local/lib64/libssl.so.3 /usr/lib64/libssl.so.3
     #ln -s /usr/local/lib64/libcrypto.so.3 /usr/lib64/libcrypto.so.3
+
 elif [ "$opensslversion" = "4" ];then
     sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build rpmdevtools rpmlint
     rpmdev-setuptree
     sudo dnf -vy remove openssl openssl-devel
-    wget -O /root/rpmbuild/SOURCES/openssl-1.1.1o.tar.gz https://www.openssl.org/source/openssl-1.1.1o.tar.gz
+    wget -O /root/rpmbuild/SOURCES/openssl-1.1.1q.tar.gz https://www.openssl.org/source/openssl-1.1.1q.tar.gz
 cat << 'EOF' > /root/rpmbuild/SPECS/openssl.spec
-Summary: OpenSSL 1.1.1o for RedHat
+Summary: OpenSSL 1.1.1q for RedHat
 Name: openssl
-Version: %{?version}%{!?version:1.1.1o}
+Version: %{?version}%{!?version:1.1.1q}
 Release: 1%{?dist}
 Obsoletes: %{name} <= %{version}
 Provides: %{name} = %{version}
@@ -65,13 +62,13 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 %global openssldir /usr/openssl
 %description
 https://github.com/philyuchkoff/openssl-RPM-Builder
-OpenSSL RPM for version 1.1.1o on RedHat
+OpenSSL RPM for version 1.1.1q on RedHat
 %package devel
 Summary: Development files for programs which will use the openssl library
 Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
 %description devel
-OpenSSL RPM for version 1.1.1o on RedHat (development package)
+OpenSSL RPM for version 1.1.1q on RedHat (development package)
 %prep
 %setup -q
 %build
@@ -103,17 +100,18 @@ EOF
         rpmbuild \
         -D 'debug_package %{nil}' \
         -ba openssl.spec
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-1.1.1o-1.el8.x86_64.rpm --nodeps --force
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-1.1.1o-1.el8.x86_64.rpm
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-1.1.1q-1.el9.x86_64.rpm --nodeps --force
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-1.1.1q-1.el9.x86_64.rpm
+
 elif [ "$opensslversion" = "5" ];then
     sudo dnf -vy install curl which make gcc perl perl-WWW-Curl rpm-build rpmdevtools rpmlint
     rpmdev-setuptree
-    wget -O /root/rpmbuild/SOURCES/openssl-3.0.3.tar.gz https://www.openssl.org/source/openssl-3.0.3.tar.gz
+    wget -O /root/rpmbuild/SOURCES/openssl-3.0.5.tar.gz https://www.openssl.org/source/openssl-3.0.5.tar.gz
     sudo dnf -vy remove openssl openssl-devel
     cat << 'EOF' > /root/rpmbuild/SPECS/openssl.spec
-Summary: OpenSSL 3.0.3 for Red Hat
+Summary: OpenSSL 3.0.5 for Red Hat
 Name: openssl
-Version: %{?version}%{!?version:3.0.3}
+Version: %{?version}%{!?version:3.0.5}
 Release: 1%{?dist}
 Obsoletes: %{name} <= %{version}
 Provides: %{name} = %{version}
@@ -128,7 +126,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
 https://github.com/philyuchkoff/openssl-RPM-Builder
-OpenSSL RPM for version 3.0.3 on Red Hat
+OpenSSL RPM for version 3.0.5 on Red Hat
 
 %package devel
 Summary: Development files for programs which will use the openssl library
@@ -136,7 +134,7 @@ Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
 
 %description devel
-OpenSSL RPM for version 3.0.3 on Red Hat (development package)
+OpenSSL RPM for version 3.0.5 on Red Hat (development package)
 
 %prep
 %setup -q
@@ -175,12 +173,11 @@ EOF
     rpmbuild \
     -D 'debug_package %{nil}' \
     -ba openssl.spec
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-3.0.3-1.el8.x86_64.rpm --nodeps
-    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-3.0.3-1.el8.x86_64.rpm
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-3.0.5-1.el9.x86_64.rpm --nodeps
+    sudo rpm -Uvh /root/rpmbuild/RPMS/x86_64/openssl-devel-3.0.5-1.el8.x86_64.rpm
     ln -s /usr/openssl/lib64/libssl.so.3 /usr/lib64/libssl.so.3
     ln -s /usr/openssl/lib64/libcrypto.so.3 /usr/lib64/libcrypto.so.3
     ln -s /usr/openssl/bin/openssl /usr/bin/openssl
 else
     echo "Out of options please choose between 1-6"
 fi
-printf "\nOpenSSL Installation Has Finished \n\n"
