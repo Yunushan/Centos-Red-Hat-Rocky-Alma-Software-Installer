@@ -22,10 +22,11 @@ Please enter your choice(s): '
 while :
 do
     clear
-    options=("PHP ${opts[1]}" "Nginx ${opts[2]}" "Apache ${opts[3]}" "Grub Customizer ${opts[4]}" "Linux Kernel ${opts[5]}" 
+    options=("PHP ${opts[1]}" "Nginx ${opts[2]}" "Apache ${opts[3]}" "Grub Customizer ${opts[4]}" "Linux Kernel ${opts[5]}"
     "FFmpeg ${opts[6]}" "OpenSSL ${opts[7]}" "OpenSSH ${opts[8]}" "Mysql ${opts[9]}" "OpenJDK 8-11-17 ${opts[10]}"
-    "DVBlast 3.4 ${opts[11]}" "Zabbix Server ${opts[12]}" "UrBackup Server ${opts[13]}" "PostgreSQL ${opts[14]}" 
-    "Done ${opts[15]}")
+    "DVBlast 3.4 ${opts[11]}" "Zabbix Server ${opts[12]}" "UrBackup Server ${opts[13]}" "PostgreSQL ${opts[14]}"
+    "Nodejs-And-Npm ${opts[15]}" "Winehq ${opts[16]}" "Pgadmin ${opts[17]}" "Pgagent ${opts[18]}" "Wazuh Server ${opts[19]}"
+    "Phpmyadmin ${opts[20]}" "Elasticsearch ${opts[21]}" "Logstash ${opts[22]}" "Kibana ${opts[23]}" "Done ${opts[24]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -85,11 +86,47 @@ do
                 choice 14
                 break
                 ;;
-            "Done ${opts[15]}")
+            "Nodejs-And-Npm ${opts[15]}")
+                choice 15
+                break
+                ;;
+            "Winehq ${opts[16]}")
+                choice 16
+                break
+                ;;
+            "Pgadmin ${opts[17]}")
+                choice 17
+                break
+                ;;
+            "Pgagent ${opts[18]}")
+                choice 18
+                break
+                ;;
+            "Wazuh Server ${opts[19]}")
+                choice 19
+                break
+                ;;
+            "Phpmyadmin ${opts[20]}")
+                choice 20
+                break
+                ;;
+            "Elasticsearch ${opts[21]}")
+                choice 21
+                break
+                ;;
+            "Logstash ${opts[22]}")
+                choice 22
+                break
+                ;;
+            "Kibana ${opts[23]}")
+                choice 23
+                break
+                ;;
+            "Done ${opts[24]}")
                 break 2
                 ;;
 
-            *) printf '%s\n' 'Please Choose Between 1-15';;
+            *) printf '%s\n' 'Please Choose Between 1-24';;
         esac
     done
 done
@@ -211,6 +248,42 @@ do
             14)
             # 14-PostgreSQL
             . "$scripts_path/14-Postgresql.sh"
+            ;;
+            15)
+            # 15-Nodejs-And-Npm
+            . "$scripts_path/15-Nodejs-And-Npm.sh"
+            ;;
+            16)
+            # 16-Winehq
+            . "$scripts_path/16-Winehq.sh"
+            ;;
+            17)
+            # 17-Pgadmin
+            . "$scripts_path/17-Pgadmin.sh"
+            ;;
+            18)
+            # 18-Pgagent
+            . "$scripts_path/18-Pgagent.sh"
+            ;;
+            19)
+            # 19-Wazuh-Server
+            . "$scripts_path/19-Wazuh-Server.sh"
+            ;;
+            20)
+            # 20-Phpmyadmin
+            . "$scripts_path/20-Phpmyadmin.sh"
+            ;;
+            21)
+            # 21-Elasticsearch
+            . "$scripts_path/21-Elasticsearch.sh"
+            ;;
+            22)
+            # 22-Logstash
+            . "$scripts_path/22-Logstash.sh"
+            ;;
+            23)
+            # 23-Kibana
+            . "$scripts_path/23-Kibana.sh"
             ;;
         esac
     fi

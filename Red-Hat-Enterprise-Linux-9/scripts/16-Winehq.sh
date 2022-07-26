@@ -1,12 +1,10 @@
 #!/bin/bash
 
 #16-WineHQ Latest
-printf "\nPlease Choose Your Desired Visual Studio Code Version \n\n1-)Visual Studio Code(From Package Manager)\
-\n2-)Visual Studio Code (Via Snap)\n\nPlease Select Your Visual Studio Code Version:"
+printf "\nPlease Choose Your Desired WineHQ Version \n\n1-)WineHQ (Compile Latest Version)\n\n
+Please Select Your WineHQ Version:"
 read -r winehq_version
-if [ "$winehq_version" = "2" ];then
-    sudo dnf -vy install wine wine-common wine-devel winetricks
-elif [ "$winehq_version" = "2" ];then
+if [ "$winehq_version" = "1" ];then
     sudo dnf -vy install --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm \
     https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-9.noarch.rpm
     sudo mkdir -pv /root/Downloads/winelatest
@@ -39,5 +37,5 @@ elif [ "$winehq_version" = "2" ];then
     ./configure --enable-win64
     make -j "$core" && make -j "$core" install
 else
-    echo "Out of option Please Choose between 1-2"
+    echo "Out of option Please Choose between 1"
 fi
