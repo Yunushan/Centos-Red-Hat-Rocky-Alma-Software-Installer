@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#41-Google Authenticator
+#24-Google Authenticator
 printf "\nPlease Choose Your Desired Google Authenticator Version\n1-)Google Authenticator (Compile From Source)\n\
 2-)Google Authenticator (From .rpm file)\n\nPlease Select Your Google Authenticator Version:"
 read -r google_authenticator_version

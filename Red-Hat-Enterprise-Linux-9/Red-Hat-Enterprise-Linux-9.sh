@@ -26,7 +26,9 @@ do
     "FFmpeg ${opts[6]}" "OpenSSL ${opts[7]}" "OpenSSH ${opts[8]}" "Mysql ${opts[9]}" "OpenJDK 8-11-17 ${opts[10]}"
     "DVBlast 3.4 ${opts[11]}" "Zabbix Server ${opts[12]}" "UrBackup Server ${opts[13]}" "PostgreSQL ${opts[14]}"
     "Nodejs-And-Npm ${opts[15]}" "Winehq ${opts[16]}" "Pgadmin ${opts[17]}" "Pgagent ${opts[18]}" "Wazuh Server ${opts[19]}"
-    "Phpmyadmin ${opts[20]}" "Elasticsearch ${opts[21]}" "Logstash ${opts[22]}" "Kibana ${opts[23]}" "Done ${opts[24]}")
+    "Phpmyadmin ${opts[20]}" "Elasticsearch ${opts[21]}" "Logstash ${opts[22]}" "Kibana ${opts[23]}"
+    "Google-Authenticator ${opts[24]}" "Vim ${opts[25]}" "Gocd ${opts[26]}" "Jenkins ${opts[27]}" "Passbolt-Ce ${opts[28]}" 
+    "Done ${opts[29]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -122,11 +124,31 @@ do
                 choice 23
                 break
                 ;;
-            "Done ${opts[24]}")
+            "Google-Authenticator ${opts[24]}")
+                choice 24
+                break
+                ;;
+            "Vim ${opts[25]}")
+                choice 25
+                break
+                ;;
+            "Gocd ${opts[26]}")
+                choice 26
+                break
+                ;;
+            "Jenkins ${opts[27]}")
+                choice 27
+                break
+                ;;
+            "Passbolt-Ce ${opts[28]}")
+                choice 28
+                break
+                ;;
+            "Done ${opts[29]}")
                 break 2
                 ;;
 
-            *) printf '%s\n' 'Please Choose Between 1-24';;
+            *) printf '%s\n' 'Please Choose Between 1-29';;
         esac
     done
 done
@@ -284,6 +306,26 @@ do
             23)
             # 23-Kibana
             . "$scripts_path/23-Kibana.sh"
+            ;;
+            24)
+            # 24-Google-Authenticator
+            . "$scripts_path/24-Google-Authenticator.sh"
+            ;;
+            25)
+            # 25-Vim
+            . "$scripts_path/25-Vim.sh"
+            ;;
+            26)
+            # 26-Gocd
+            . "$scripts_path/26-Gocd.sh"
+            ;;
+            27)
+            # 27-Jenkins
+            . "$scripts_path/27-Jenkins.sh"
+            ;;
+            28)
+            # 28-Passbolt-Ce
+            . "$scripts_path/28-Passbolt-Ce.sh"
             ;;
         esac
     fi
