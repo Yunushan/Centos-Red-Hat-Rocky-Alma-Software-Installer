@@ -146,9 +146,11 @@ do
                 ;;
             "Fail2ban ${opts[29]}")
                 choice 29
+                break
                 ;;
             "Tinc ${opts[30]}")
                 choice 30
+                break
                 ;;
             "Done ${opts[31]}")
                 break 2
