@@ -145,10 +145,10 @@ do
                 break
                 ;;
             "Fail2ban ${opts[29]}")
-                break 2
+                choice 29
                 ;;
             "Tinc ${opts[30]}")
-                break 2
+                choice 30
                 ;;
             "Done ${opts[31]}")
                 break 2
