@@ -27,8 +27,8 @@ do
     "DVBlast 3.4 ${opts[11]}" "Zabbix Server ${opts[12]}" "UrBackup Server ${opts[13]}" "PostgreSQL ${opts[14]}"
     "Nodejs-And-Npm ${opts[15]}" "Winehq ${opts[16]}" "Pgadmin ${opts[17]}" "Pgagent ${opts[18]}" "Wazuh Server ${opts[19]}"
     "Phpmyadmin ${opts[20]}" "Elasticsearch ${opts[21]}" "Logstash ${opts[22]}" "Kibana ${opts[23]}"
-    "Google-Authenticator ${opts[24]}" "Vim ${opts[25]}" "Gocd ${opts[26]}" "Jenkins ${opts[27]}" "Passbolt-Ce ${opts[28]}" 
-    "Done ${opts[29]}")
+    "Google-Authenticator ${opts[24]}" "Vim ${opts[25]}" "Gocd ${opts[26]}" "Jenkins ${opts[27]}" "Passbolt-Ce ${opts[28]}"
+    "Fail2ban ${opts[29]}" "Tinc ${opts[30]}" "Done ${opts[31]}")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -144,11 +144,17 @@ do
                 choice 28
                 break
                 ;;
-            "Done ${opts[29]}")
+            "Fail2ban ${opts[29]}")
+                break 2
+                ;;
+            "Tinc ${opts[30]}")
+                break 2
+                ;;
+            "Done ${opts[31]}")
                 break 2
                 ;;
 
-            *) printf '%s\n' 'Please Choose Between 1-29';;
+            *) printf '%s\n' 'Please Choose Between 1-31';;
         esac
     done
 done
@@ -326,6 +332,14 @@ do
             28)
             # 28-Passbolt-Ce
             . "$scripts_path/28-Passbolt-Ce.sh"
+            ;;
+            29)
+            # 29-Fail2ban
+            . "$scripts_path/29-Fail2ban.sh"
+            ;;
+            30)
+            # 30-Tinc
+            . "$scripts_path/30-Tinc.sh"
             ;;
         esac
     fi
