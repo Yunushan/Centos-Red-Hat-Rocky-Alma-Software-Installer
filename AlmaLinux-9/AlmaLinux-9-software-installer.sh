@@ -25,7 +25,7 @@ Please enter your choice(s): '
 while :;do
     clear
     options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Snap ${opts[3]}" "Python 2.7.18 ${opts[4]}" 
-    "WineHQ Latest ${opts[5]}" "Htop ${opts[6]}" "FFmpeg ${opts[7]}" "Done ${opts[8]}")
+    "WineHQ Latest ${opts[5]}" "Htop ${opts[6]}" "FFmpeg ${opts[7]}" "Nginx ${opts[8]}" "Done ${opts[9]}")
     select opt in "${options[@]}";do
         case $opt in
             "PHP ${opts[1]}")
@@ -56,10 +56,14 @@ while :;do
                 choice 7
                 break
                 ;;
-            "Done ${opts[8]}")
+            "Nginx ${opts[8]}")
+                choice 8
+                break
+                ;;
+            "Done ${opts[9]}")
                 break 2
                 ;;
-            *) printf '%s\n' 'Please Choose Between 1-8';;
+            *) printf '%s\n' 'Please Choose Between 1-9';;
         esac
     done
 done
@@ -89,8 +93,11 @@ printf "\n"
 
 #Necessary Packages
 sudo dnf -vy install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+sudo dnf -vy config-manager --set-enabled crb
+sudo dnf -vy dnf config-manager --set-enabled ha
 sudo dnf -vy install yum-utils
-sudo dnf -vy install wget curl mlocate nano lynx net-tools git
+sudo dnf -vy install wget curl mlocate nano lynx net-tools git tar bash-completion
+source /etc/profile.d/bash_completion.sh
 printf "\n"
 
 # Create Download Folder in root
@@ -132,6 +139,10 @@ for opt in "${!opts[@]}";do
             7)
             #7-Ffmpeg
             . "$scripts_path/7-Ffmpeg.sh"
+            ;;
+            8)
+            #8-Nginx
+            . "$scripts_path/8-Nginx.sh"
             ;;
         esac
     fi

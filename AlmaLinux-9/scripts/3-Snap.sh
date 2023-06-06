@@ -1,21 +1,23 @@
 #!/bin/bash
 
 #3-Snap From Source Code
-sudo dnf -vy install gcc valgrind xfsprogs-devel selinux-policy-devel autoconf automake libtool glib2-devel libcap-devel \
-libseccomp-devel libudev-devel
-sudo dnf -vy groupinstall 'Development Tools'
-sudo wget -O /root/Downloads/python3-docutils-0.16-6.el9.noarch.rpm \
-https://www.rpmfind.net/linux/centos-stream/9-stream/CRB/x86_64/os/Packages/python3-docutils-0.16-6.el9.noarch.rpm
-sudo rpm -ivh /root/Downloads/python3-docutils-0.16-6.el9.noarch.rpm
-sudo dnf -vy --enablerepo=crb install glibc-static
-sudo wget -O /root/Downloads/go1.17.5.linux-amd64.tar.gz https://go.dev/dl/go1.17.5.linux-amd64.tar.gz
-sudo mkdir -pv /root/Downloads/go-latest
-rm -rf /usr/local/go && tar -C /usr/local -xzvf /root/Downloads/go1.17.5.linux-amd64.tar.gz
-export PATH=$PATH:/usr/local/go/bin
-source ~/.bash_profile
-rpmbuild -bb --build-in-place packaging/fedora/snapd.spec
-#sudo wget -O /root/Downloads/Python-2.7.18.tgz https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz
-#tar xzvf /root/Downloads/Python-2.7.18.tgz
-#cd /root/Downloads/Python-2.7.18
-#./configure --prefix=/usr/local --enable-optimizations
-#make -j$core && make -j$core altinstall
+sudo dnf -v config-manager --set-enabled crb
+sudo dnf -vy install go-toolset
+sudo dnf -vy install rpmdevtools
+rpmdev-setuptree
+snapdstable=$(lynx -dump https://github.com/snapcore/snapd/tags | awk '{print $2}' | grep -v ']' | grep 'tar.gz' | head -n 1)
+sudo wget -O /root/Downloads/snapd-latest.tar.gz "$snapdstable"
+sudo mkdir -pv /root/Downloads/snapd-latest
+tar xzvf /root/Downloads/snapd-latest.tar.gz -C /root/Downloads/snapd-latest --strip-components 1
+spectool -g /root/Downloads/snapd-latest/packaging/fedora/snapd.spec
+sudo dnf builddep /root/Downloads/snapd-latest/packaging/fedora/snapd.spec -y
+rpmbuild -bb /root/Downloads/snapd-latest/packaging/fedora/snapd.spec
+snap_confine_rpm=$(locate snap-confine- | grep -i x86_64.rpm | grep -v 'debuginfo' | head -n 1)
+snapd_selinux_rpm=$(locate snapd-selinux | head -n 1)
+snapd_rpm=$(locate snapd | grep -i x86_64.rpm | grep -v 'debuginfo' | head -n 1)
+sudo dnf -vy localinstall "$snap_confine_rpm"
+sudo dnf -vy localinstall "$snapd_selinux_rpm"
+sudo dnf -vy localinstall "$snapd_rpm"
+sudo systemctl enable --now snapd.socket
+sleep 5 # For prevent too early operation error on snap
+snap install hello-world

@@ -10,6 +10,8 @@ elif [ "$phpversion" = "2" ];then
     sudo dnf -vy install php80 php80-php-pecl-mysql php80-php-pecl-memcache php80-php-pecl-memcached
 elif [ "$phpversion" = "3" ];then
     sudo dnf -vy install php81 php81-php-pecl-mysql php81-php-pecl-memcache php81-php-pecl-memcached
+elif [ "$phpversion" = "4" ];then
+    sudo dnf -vy install php82 php82-php-pecl-mysql php82-php-pecl-memcache php82-php-pecl-memcached
 else
     echo "Out of option Please Choose between 1-3"
 :
