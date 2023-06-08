@@ -25,7 +25,8 @@ Please enter your choice(s): '
 while :;do
     clear
     options=("PHP ${opts[1]}" "Grub Customizer ${opts[2]}" "Snap ${opts[3]}" "Python 2.7.18 ${opts[4]}" 
-    "WineHQ Latest ${opts[5]}" "Htop ${opts[6]}" "FFmpeg ${opts[7]}" "Nginx ${opts[8]}" "Done ${opts[9]}")
+    "WineHQ Latest ${opts[5]}" "Htop ${opts[6]}" "FFmpeg ${opts[7]}" "Nginx ${opts[8]}" "Linux-Kernel ${opts[9]}" 
+    "Openssl ${opts[10]}" "Openssh ${opts[11]}" "Done ${opts[12]}")
     select opt in "${options[@]}";do
         case $opt in
             "PHP ${opts[1]}")
@@ -60,10 +61,22 @@ while :;do
                 choice 8
                 break
                 ;;
-            "Done ${opts[9]}")
+            "Linux-Kernel ${opts[9]}")
+                choice 9
+                break
+                ;;
+            "Openssl ${opts[10]}")
+                choice 10
+                break
+                ;;
+            "Openssh ${opts[11]}")
+                choice 11
+                break
+                ;;
+            "Done ${opts[12]}")
                 break 2
                 ;;
-            *) printf '%s\n' 'Please Choose Between 1-9';;
+            *) printf '%s\n' 'Please Choose Between 1-12';;
         esac
     done
 done
@@ -143,6 +156,18 @@ for opt in "${!opts[@]}";do
             8)
             #8-Nginx
             . "$scripts_path/8-Nginx.sh"
+            ;;
+            9)
+            #9-Linux-Kernel
+            . "$scripts_path/9-Linux-Kernel.sh"
+            ;;
+            10)
+            #10-Openssl
+            . "$scripts_path/10-Openssl.sh"
+            ;;
+            11)
+            #11-Openssh
+            . "$scripts_path/11-Openssh.sh"
             ;;
         esac
     fi
